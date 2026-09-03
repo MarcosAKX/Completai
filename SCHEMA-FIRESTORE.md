@@ -15,6 +15,7 @@
   type: "client",              // fixo, nunca "gas_station" — ver regra de exclusividade
   name: string,
   email: string,
+  phone: string,               // celular, contato administrativo do cliente
   createdAt: timestamp
 }
 ```
@@ -34,6 +35,7 @@
   type: "gas_station",         // fixo, nunca "client" — ver regra de exclusividade
   cnpj: string,
   email: string,
+  phone: string,                // telefone administrativo (contato do dono, não público)
   brandName: string,
   createdAt: timestamp,
   updatedAt: timestamp
@@ -46,7 +48,10 @@
   uid: string,
   brandName: string,
   address: string,
-  city: string,               // "Bebedouro" fixo no MVP
+  neighborhood: string,       // bairro — ajuda o motorista a localizar o posto
+  city: string,                // cidade digitada pelo dono do posto, texto livre
+  state: string,                // UF, derivado da geocodificação (não do texto
+                                 // digitado) — ver seção "Escopo geográfico"
   latitude: number,           // geocodificado 1x no cadastro
   longitude: number,          // geocodificado 1x no cadastro
   prices: {
@@ -135,6 +140,43 @@ outro já existir. Ver `firestore.rules` para a implementação.
 - Se a geocodificação falhar no cadastro (endereço não encontrado), o posto
   não deve ser salvo até o dono corrigir o endereço — não persista
   `latitude`/`longitude` nulos silenciosamente.
+
+## Escopo geográfico
+
+O MVP aceita cadastro de postos em **qualquer cidade do estado de São
+Paulo** (não mais restrito a Bebedouro). A restrição de estado é aplicada
+assim:
+
+1. O dono do posto digita endereço, bairro e cidade livremente.
+2. No cadastro, a `AddressGeocodingService` usa `placemarkFromAddress`
+   (não só `locationFromAddress`) para obter o `administrativeArea`
+   (UF) retornado pela geocodificação — **não o texto que o usuário
+   digitou**.
+3. Se o `administrativeArea` não corresponder a "SP", o cadastro é
+   rejeitado no client com `ValidationException` ("Cadastro disponível
+   apenas para postos no estado de São Paulo.") **antes** de qualquer
+   escrita no Firestore.
+4. O campo `state` gravado em `public_stations/{uid}` vem do resultado da
+   geocodificação, não do input do usuário — evita que alguém digite
+   "SP" manualmente para burlar a restrição enquanto o endereço real é de
+   outro estado.
+5. **Limitação conhecida:** essa validação acontece no client. Um cliente
+   adulterado (chamando a API do Firestore diretamente) poderia, em teoria,
+   gravar `state: "SP"` mesmo com endereço de outro estado, já que as rules
+   validam apenas o valor do campo `state`, não a veracidade da
+   geocodificação (rules não têm acesso a serviços de geocodificação
+   externos). Isso é uma restrição de **escopo de produto** (quais postos
+   o app pretende listar), não de segurança de dados sensíveis — o risco
+   aceito aqui é bem menor do que o P0 de escalada de papel, e documentado
+   pelo mesmo motivo: correção completa exigiria validação server-side.
+
+## Adição de campos administrativos (celular, telefone, bairro)
+
+`users.phone`, `gas_stations.phone` e `public_stations.neighborhood` foram
+adicionados após a implementação inicial das telas de cadastro. **Nenhuma
+mudança em `firestore.rules` foi necessária** — as regras de criação/edição
+desses documentos validam apenas dono, tipo e tamanho de arrays, não a lista
+completa de campos permitidos, então os novos campos já são aceitos.
 
 ## Consistência (batches e transações)
 

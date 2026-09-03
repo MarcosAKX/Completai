@@ -36,8 +36,12 @@ class AuthViewModel extends AsyncNotifier<AuthSession?> {
     required String email,
     required String password,
   }) => _run(() => _repository.createAccount(email: email, password: password));
-  Future<void> completeClientRegistration({required String name}) =>
-      _run(() => _repository.completeClientRegistration(name: name));
+  Future<void> completeClientRegistration({
+    required String name,
+    required String phone,
+  }) => _run(
+    () => _repository.completeClientRegistration(name: name, phone: phone),
+  );
   Future<void> completeStationRegistration(StationRegistration registration) =>
       _run(() => _repository.completeStationRegistration(registration));
   Future<void> refreshSession() =>

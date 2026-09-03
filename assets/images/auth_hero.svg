@@ -1,0 +1,9 @@
+<!-- Linha de rota do hero, inspirada na referência visual do CompletAI. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 90" fill="none">
+  <g stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 67C42 66 47 35 82 37c31 2 38 20 71 15 31-4 46-29 93-27h30"/>
+    <circle cx="82" cy="37" r="5" fill="#325DFB"/>
+    <circle cx="153" cy="52" r="5" fill="#325DFB"/>
+    <path d="M278 14h26v48h-26zM283 20h16v14h-16zM304 27h7l6 8v19c0 7 8 7 8 0V35"/>
+  </g>
+</svg>

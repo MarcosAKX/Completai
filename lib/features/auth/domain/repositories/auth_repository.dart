@@ -10,7 +10,10 @@ abstract interface class AuthRepository {
     required String email,
     required String password,
   });
-  Future<AuthSession> completeClientRegistration({required String name});
+  Future<AuthSession> completeClientRegistration({
+    required String name,
+    required String phone,
+  });
   Future<AuthSession> completeStationRegistration(
     StationRegistration registration,
   );

@@ -22,11 +22,21 @@ class TestAuthService implements FirebaseAuthService {
   @override
   User? currentUser = TestUser('a');
   bool admin = false;
+  int accountCreations = 0;
   @override
   Future<bool> isAdmin({bool forceRefresh = false}) async => admin;
   @override
   Future<void> signOut() async {
     currentUser = null;
+  }
+
+  @override
+  Future<User> createAccount({
+    required String email,
+    required String password,
+  }) async {
+    accountCreations++;
+    return currentUser = TestUser('created');
   }
 
   @override
@@ -84,5 +94,24 @@ void main() {
       repository.restoreSession(),
       throwsA(isA<RoleConflictFailure>()),
     );
+  });
+  test('createAccount reutiliza usuário autenticado do mesmo e-mail', () async {
+    final auth = TestAuthService();
+    final repository = AuthRepositoryImpl(auth, TestProfiles());
+    final result = await repository.createAccount(
+      email: 'a@example.com',
+      password: 'ignored',
+    );
+    expect(result.uid, 'a');
+    expect(auth.accountCreations, 0);
+  });
+  test('createAccount rejeita e-mail diferente durante outra sessão', () async {
+    final auth = TestAuthService();
+    final repository = AuthRepositoryImpl(auth, TestProfiles());
+    await expectLater(
+      repository.createAccount(email: 'outro@example.com', password: 'ignored'),
+      throwsA(isA<ValidationFailure>()),
+    );
+    expect(auth.accountCreations, 0);
   });
 }

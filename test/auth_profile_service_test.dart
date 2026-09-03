@@ -14,7 +14,7 @@ class TestGeocoding extends AddressGeocodingService {
   Future<StationCoordinates> resolve(String address) async {
     calls++;
     if (fail) throw const ValidationException('Endereço não encontrado.');
-    return const StationCoordinates(-20.949, -48.479);
+    return const StationCoordinates(-20.949, -48.479, 'SP');
   }
 }
 
@@ -25,7 +25,10 @@ void main() {
   const station = StationRegistration(
     cnpj: '12345678000190',
     brandName: 'Posto Teste',
+    phone: '(17) 3333-4444',
     address: 'Rua Teste, 100',
+    neighborhood: 'Centro',
+    city: 'Ribeirão Preto',
   );
   setUp(() {
     firestore = FakeFirebaseFirestore();
@@ -36,7 +39,12 @@ void main() {
   test(
     'cliente existente impede cadastro de posto antes da geocodificação',
     () async {
-      await service.createClient(uid: 'u1', email: 'a@b.com', name: 'Ana');
+      await service.createClient(
+        uid: 'u1',
+        email: 'a@b.com',
+        name: 'Ana',
+        phone: '(17) 99999-9999',
+      );
       await expectLater(
         service.createStation(
           uid: 'u1',
@@ -64,7 +72,12 @@ void main() {
       registration: station,
     );
     await expectLater(
-      service.createClient(uid: 'u1', email: 'a@b.com', name: 'Ana'),
+      service.createClient(
+        uid: 'u1',
+        email: 'a@b.com',
+        name: 'Ana',
+        phone: '(17) 99999-9999',
+      ),
       throwsA(isA<RoleConflictException>()),
     );
     expect(
@@ -111,6 +124,7 @@ void main() {
       'type',
       'cnpj',
       'email',
+      'phone',
       'brandName',
       'createdAt',
       'updatedAt',
@@ -119,7 +133,9 @@ void main() {
       'uid',
       'brandName',
       'address',
+      'neighborhood',
       'city',
+      'state',
       'latitude',
       'longitude',
       'prices',
@@ -130,7 +146,9 @@ void main() {
       'services',
       'tags',
     });
-    expect(public['city'], 'Bebedouro');
+    expect(public['city'], 'Ribeirão Preto');
+    expect(public['state'], 'SP');
+    expect(public['neighborhood'], 'Centro');
     expect(public['latitude'], -20.949);
     expect(public['longitude'], -48.479);
     expect(public['prices'], {
@@ -151,20 +169,31 @@ void main() {
     });
     expect(public['reviewCount'], 0);
     expect(private['createdAt'], isA<Timestamp>());
+    expect(private['phone'], '(17) 3333-4444');
     expect(geocoding.calls, 1);
   });
 
-  test('cadastro repetido não sobrescreve perfil existente', () async {
-    await service.createClient(uid: 'u1', email: 'a@b.com', name: 'Ana');
-    await expectLater(
-      service.createClient(uid: 'u1', email: 'a@b.com', name: 'Outro'),
-      throwsA(isA<ValidationException>()),
-    );
-    expect(
-      (await firestore.collection('users').doc('u1').get()).data()!['name'],
-      'Ana',
-    );
-  });
+  test(
+    'cadastro repetido do mesmo papel é idempotente e não sobrescreve',
+    () async {
+      await service.createClient(
+        uid: 'u1',
+        email: 'a@b.com',
+        name: 'Ana',
+        phone: '(17) 99999-9999',
+      );
+      await service.createClient(
+        uid: 'u1',
+        email: 'a@b.com',
+        name: 'Outro',
+        phone: '(17) 98888-8888',
+      );
+      expect(
+        (await firestore.collection('users').doc('u1').get()).data()!['name'],
+        'Ana',
+      );
+    },
+  );
 
   test('leitura rejeita estado legado com dois papéis', () async {
     await firestore.collection('users').doc('u1').set({

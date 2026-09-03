@@ -17,6 +17,7 @@ abstract final class AppTheme {
     );
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppSpacing.controlRadius),
+      borderSide: const BorderSide(color: AppColors.outline),
     );
     return ThemeData(
       useMaterial3: true,
@@ -32,7 +33,15 @@ abstract final class AppTheme {
           ),
           textStyle: AppTextStyles.label,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.controlRadius),
+            borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, AppSpacing.controlMinHeight),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
           ),
         ),
       ),
@@ -41,7 +50,13 @@ abstract final class AppTheme {
         enabledBorder: border.copyWith(
           borderSide: BorderSide(color: colors.outline),
         ),
-        contentPadding: const EdgeInsets.all(AppSpacing.md),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: 17,
+        ),
+        hintStyle: AppTextStyles.body.copyWith(
+          color: AppColors.textSecondary.withValues(alpha: .72),
+        ),
         errorMaxLines: 3,
         labelStyle: AppTextStyles.body,
         errorStyle: AppTextStyles.caption,

@@ -72,6 +72,16 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) => _guard(() async {
     _cachedSession = null;
+    final existing = _auth.currentUser;
+    if (existing != null &&
+        existing.email?.trim().toLowerCase() == email.trim().toLowerCase()) {
+      return _session(existing, forceRefresh: true);
+    }
+    if (existing != null) {
+      throw const ValidationException(
+        'Saia da conta atual antes de cadastrar outro e-mail.',
+      );
+    }
     return _session(
       await _auth.createAccount(email: email, password: password),
     );
@@ -81,16 +91,19 @@ class AuthRepositoryImpl implements AuthRepository {
       _auth.currentUser ?? (throw const UnauthenticatedException());
 
   @override
-  Future<AuthSession> completeClientRegistration({required String name}) =>
-      _guard(() async {
-        final user = _requireUser();
-        await _profiles.createClient(
-          uid: user.uid,
-          email: user.email ?? '',
-          name: name,
-        );
-        return _session(user, forceRefresh: true);
-      });
+  Future<AuthSession> completeClientRegistration({
+    required String name,
+    required String phone,
+  }) => _guard(() async {
+    final user = _requireUser();
+    await _profiles.createClient(
+      uid: user.uid,
+      email: user.email ?? '',
+      name: name,
+      phone: phone,
+    );
+    return _session(user, forceRefresh: true);
+  });
 
   @override
   Future<AuthSession> completeStationRegistration(
