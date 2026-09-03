@@ -1,0 +1,18 @@
+{
+  "name": "completai-firestore-rules-tests",
+  "private": true,
+  "type": "module",
+  "description": "Testes reais das regras Firestore no Emulator local.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-completai-rules --config ../../firebase.emulators.json \"npm run test:rules\"",
+    "test:rules": "node --test --test-concurrency=1 --test-timeout=60000 firestore.rules.test.mjs"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "firebase": "12.18.0",
+    "firebase-tools": "15.29.0"
+  }
+}

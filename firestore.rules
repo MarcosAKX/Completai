@@ -1,0 +1,124 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    // CORRIGIDO: checagem direcional, não mais OR simétrico (que nunca
+    // bloqueava nada, conforme apontado pelo Codex). Residual: em caso de
+    // duas requisições concorrentes criando cada papel ao mesmo tempo, ainda
+    // existe uma janela de corrida — mitigação real definitiva exigiria
+    // transação server-side (fora do escopo Spark). Aceito como risco
+    // residual documentado.
+    function canBecomeClient(uid) {
+      return !exists(/databases/$(database)/documents/gas_stations/$(uid));
+    }
+
+    function canBecomeStation(uid) {
+      return !exists(/databases/$(database)/documents/users/$(uid));
+    }
+
+    // ---------- users (privado) ----------
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid)
+                    && request.resource.data.type == 'client'
+                    && canBecomeClient(uid);
+      allow update: if isOwner(uid) && request.resource.data.type == 'client';
+      allow delete: if isOwner(uid);
+
+      match /favorites/{stationId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // ---------- gas_stations (privado, dados sensíveis) ----------
+    match /gas_stations/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid)
+                    && request.resource.data.type == 'gas_station'
+                    && canBecomeStation(uid);
+      allow update: if isOwner(uid) && request.resource.data.type == 'gas_station';
+      allow delete: if isOwner(uid);
+    }
+
+    // ---------- public_stations (leitura pública) ----------
+    match /public_stations/{uid} {
+      allow read: if true;
+
+      // Dono do posto: pode alterar qualquer campo (preços, horários, etc.)
+      allow create: if isOwner(uid)
+                    && request.resource.data.city == 'Bebedouro'
+                    && request.resource.data.services.size() <= 20
+                    && request.resource.data.tags.size() <= 20;
+
+      allow update: if
+        // Caso 1: dono do posto altera qualquer campo do próprio posto.
+        (isOwner(uid)
+          && request.resource.data.city == 'Bebedouro'
+          && request.resource.data.services.size() <= 20
+          && request.resource.data.tags.size() <= 20)
+        ||
+        // Caso 2: qualquer cliente autenticado pode atualizar SOMENTE os
+        // agregados de review (averageRating/reviewCount), na mesma
+        // transação em que grava sua review. Nenhum outro campo pode mudar.
+        // LIMITAÇÃO CONHECIDA (documentada, não eliminada sem backend):
+        // rules não conseguem verificar que essa escrita corresponde a uma
+        // review real no mesmo batch — mitigamos restringindo a variação
+        // permitida por escrita (no máximo +1 review, rating dentro da
+        // faixa), não o abuso completo. Ver SCHEMA-FIRESTORE.md.
+        (isSignedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['averageRating', 'reviewCount'])
+          && request.resource.data.averageRating >= 0
+          && request.resource.data.averageRating <= 5
+          && request.resource.data.reviewCount >= 0
+          && request.resource.data.reviewCount <= resource.data.reviewCount + 1);
+
+      allow delete: if isOwner(uid);
+
+      match /reviews/{clientUid} {
+        allow read: if true;
+        allow create: if isOwner(clientUid)
+                      && request.resource.data.rating >= 1
+                      && request.resource.data.rating <= 5;
+        allow update: if isOwner(clientUid)
+                      && request.resource.data.rating >= 1
+                      && request.resource.data.rating <= 5;
+        allow delete: if isOwner(clientUid);
+
+        // CORRIGIDO: caminho tinha número ímpar de segmentos (inválido).
+        // Agora: public_stations/{uid}/reviews/{clientUid}/reports/{reporterUid}
+        match /reports/{reporterUid} {
+          allow read: if isAdmin();
+          allow create: if isOwner(reporterUid);
+          allow update: if isAdmin();
+          allow delete: if isAdmin();
+        }
+      }
+    }
+
+    // ---------- station_reports (denúncia de posto) ----------
+    // CORRIGIDO: caminho precisa de coleção intermediária para ter número
+    // par de segmentos. Antes: station_reports/{stationUid}/{reporterUid}
+    // (inválido, 3 segmentos). Agora: .../reports/{reporterUid}.
+    match /station_reports/{stationUid}/reports/{reporterUid} {
+      allow read: if isAdmin();
+      allow create: if isOwner(reporterUid);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}
