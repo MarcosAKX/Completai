@@ -8,32 +8,44 @@ class AppButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.isLoading = false,
+    this.outlined = false,
   });
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
+  final bool outlined;
   @override
-  Widget build(BuildContext context) => Semantics(
-    liveRegion: isLoading,
-    child: FilledButton(
-      onPressed: isLoading ? null : onPressed,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isLoading) ...[
-            SizedBox.square(
-              dimension: AppSpacing.progressSize,
-              child: CircularProgressIndicator(
-                strokeWidth: AppSpacing.progressStroke,
-                color: Theme.of(context).colorScheme.primary,
-                semanticsLabel: 'Carregando',
-              ),
+  Widget build(BuildContext context) {
+    final child = Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (isLoading) ...[
+          const SizedBox.square(
+            dimension: AppSpacing.progressSize,
+            child: CircularProgressIndicator(
+              strokeWidth: AppSpacing.progressStroke,
             ),
-            const SizedBox(width: AppSpacing.sm),
-          ],
-          Flexible(child: Text(label, textAlign: TextAlign.center)),
+          ),
+          const SizedBox(width: AppSpacing.sm),
         ],
+        Flexible(child: Text(label, textAlign: TextAlign.center)),
+      ],
+    );
+    return Semantics(
+      liveRegion: isLoading,
+      child: SizedBox(
+        width: double.infinity,
+        child: outlined
+            ? OutlinedButton(
+                onPressed: isLoading ? null : onPressed,
+                child: child,
+              )
+            : FilledButton(
+                onPressed: isLoading ? null : onPressed,
+                child: child,
+              ),
       ),
-    ),
-  );
+    );
+  }
 }

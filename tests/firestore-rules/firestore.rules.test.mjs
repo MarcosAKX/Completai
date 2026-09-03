@@ -59,6 +59,11 @@ test('dono cria e edita dados públicos', async () => {
   await assertSucceeds(setDoc(ref, publicStation('station')));
   await assertSucceeds(updateDoc(ref, { brandName: 'Nome atualizado', 'prices.ethanol': 3.5 }));
 });
+test('dono não cria posto público fora de SP', async () => {
+  await assertFails(setDoc(doc(database('station'), 'public_stations/station'), {
+    ...publicStation('station'), state: 'RJ',
+  }));
+});
 for (const uid of [undefined, 'alice']) {
   test(`não dono ${uid ?? 'anônimo'} não cria posto público`, async () => {
     await assertFails(setDoc(doc(database(uid), 'public_stations/station'), publicStation('station')));

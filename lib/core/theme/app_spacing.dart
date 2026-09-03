@@ -6,8 +6,10 @@ abstract final class AppSpacing {
   static const double lg = 24;
   static const double xl = 32;
   static const double xxl = 48;
-  static const double controlMinHeight = xxl;
-  static const double controlRadius = sm;
+  static const double controlMinHeight = 54;
+  static const double controlRadius = 14;
+  static const double buttonRadius = 28;
+  static const double cardRadius = 22;
   static const double progressSize = lg;
   static const double progressStroke = 2;
 }

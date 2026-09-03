@@ -60,14 +60,14 @@ service cloud.firestore {
 
       // Dono do posto: pode alterar qualquer campo (preços, horários, etc.)
       allow create: if isOwner(uid)
-                    && request.resource.data.city == 'Bebedouro'
+                    && request.resource.data.state == 'SP'
                     && request.resource.data.services.size() <= 20
                     && request.resource.data.tags.size() <= 20;
 
       allow update: if
         // Caso 1: dono do posto altera qualquer campo do próprio posto.
         (isOwner(uid)
-          && request.resource.data.city == 'Bebedouro'
+          && request.resource.data.state == 'SP'
           && request.resource.data.services.size() <= 20
           && request.resource.data.tags.size() <= 20)
         ||

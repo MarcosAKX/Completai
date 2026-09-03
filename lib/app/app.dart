@@ -11,6 +11,7 @@ class CompletAiApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: AppTheme.light,
     routes: AppRoutes.routes,
-    home: const SizedBox.shrink(),
+    onGenerateRoute: AppRoutes.onGenerateRoute,
+    initialRoute: AppRoutes.login,
   );
 }

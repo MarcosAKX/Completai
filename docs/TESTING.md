@@ -73,6 +73,8 @@ Permissões negadas esperadas podem aparecer nos logs mesmo com testes aprovados
 - Cadastro inicial de ambos os papéis; conflito sequencial nos dois sentidos;
   criação de perfil alheio e anônimo negada.
 - Leitura anônima de documento/lista pública; escrita pelo dono e negação a terceiros.
+- Cadastro público aceita `state: 'SP'` e nega estado diferente; fixtures usam
+  cidade livre (`Ribeirão Preto`), bairro e telefones conforme o schema atual.
 - Atualização de agregados por cliente não dono, inclusive junto de review em
   transação; negação de alteração simultânea de nome ou preço; negação anônima.
 - Reviews no próprio UID, impersonação negada, limites 1 e 5 aceitos e valores

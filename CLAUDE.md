@@ -20,6 +20,9 @@ qualidade de código conta na avaliação.
   identificados em revisão anterior — não reintroduza os mesmos padrões).
 - `ADMIN.md` — mecanismo de papel administrador (custom claim, não
   documento Firestore).
+- `VERIFICATION-CHECKLIST.md` — ordem exata de comandos a rodar após
+  qualquer mudança (testes de rules → deploy → testes Flutter → teste
+  manual). Siga essa ordem sempre, não invente uma sequência diferente.
 
 Se qualquer instrução minha (no chat) conflitar com esses documentos, pare e
 pergunte antes de prosseguir — não assuma que o chat tem prioridade sobre a
@@ -62,6 +65,12 @@ documentação.
   em frente silenciosamente.
 - Mudanças em `firestore.rules` exigem teste no Firebase Emulator antes de
   serem consideradas prontas — não é opcional.
+- **Deploy de rules é automático via GitHub Actions**
+  (`.github/workflows/deploy-firestore-rules.yml`): qualquer push para
+  `main` que altere `firestore.rules` dispara o deploy sozinho. Não é mais
+  necessário rodar `firebase deploy --only firestore:rules` manualmente
+  depois de um merge — mas ainda é obrigatório rodar os testes do Emulator
+  **antes** de dar push, já que o workflow não roda os testes, só publica.
 - Não faça commit/push sem autorização explícita.
 - Não crie documentação nova redundante — `ARCHITECTURE.md`,
   `SCHEMA-FIRESTORE.md` e `ADMIN.md` já existem; edite-os em vez de criar

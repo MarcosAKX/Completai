@@ -1,5 +1,6 @@
 // Campo base integrado a Form, com suporte a senha, teclado e acessibilidade.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_text_styles.dart';
 
 class AppTextField extends StatelessWidget {
@@ -17,6 +18,11 @@ class AppTextField extends StatelessWidget {
     this.obscureText = false,
     this.enabled = true,
     this.errorText,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.hintText,
+    this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
   });
   final String label;
   final TextEditingController? controller;
@@ -30,21 +36,42 @@ class AppTextField extends StatelessWidget {
   final bool obscureText;
   final bool enabled;
   final String? errorText;
+  final Widget? prefixIcon;
+  final Widget? suffixIcon;
+  final String? hintText;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextCapitalization textCapitalization;
   @override
-  Widget build(BuildContext context) => TextFormField(
-    controller: controller,
-    focusNode: focusNode,
-    validator: validator,
-    onChanged: onChanged,
-    onFieldSubmitted: onFieldSubmitted,
-    keyboardType: keyboardType,
-    textInputAction: textInputAction,
-    autofillHints: autofillHints,
-    obscureText: obscureText,
-    enabled: enabled,
-    autocorrect: !obscureText,
-    enableSuggestions: !obscureText,
-    style: AppTextStyles.body,
-    decoration: InputDecoration(labelText: label, errorText: errorText),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: AppTextStyles.label),
+      const SizedBox(height: 8),
+      TextFormField(
+        controller: controller,
+        focusNode: focusNode,
+        validator: validator,
+        onChanged: onChanged,
+        onFieldSubmitted: onFieldSubmitted,
+        keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        autofillHints: autofillHints,
+        obscureText: obscureText,
+        enabled: enabled,
+        inputFormatters: inputFormatters,
+        textCapitalization: textCapitalization,
+        autocorrect: !obscureText,
+        enableSuggestions: !obscureText,
+        style: AppTextStyles.body,
+        decoration: InputDecoration(
+          hintText: hintText,
+          errorText: errorText,
+          prefixIcon: prefixIcon,
+          suffixIcon: suffixIcon,
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+        ),
+      ),
+    ],
   );
 }

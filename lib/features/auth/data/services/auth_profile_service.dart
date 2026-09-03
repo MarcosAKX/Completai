@@ -36,32 +36,30 @@ class AuthProfileService {
     return null;
   }
 
-  Future<void> _ensureNewProfile(String uid, AccountRole requested) async {
+  Future<bool> _shouldCreateProfile(String uid, AccountRole requested) async {
     final existing = await readRole(uid);
     if (existing != null && existing != requested) {
       throw const RoleConflictException();
     }
-    if (existing != null) {
-      throw const ValidationException(
-        'O cadastro desta conta já foi concluído.',
-      );
-    }
+    return existing == null;
   }
 
   Future<void> createClient({
     required String uid,
     required String email,
     required String name,
+    required String phone,
   }) async {
-    if (name.trim().isEmpty) {
-      throw const ValidationException('Informe seu nome.');
+    if (name.trim().isEmpty || phone.trim().isEmpty) {
+      throw const ValidationException('Informe seu nome e celular.');
     }
-    await _ensureNewProfile(uid, AccountRole.client);
+    if (!await _shouldCreateProfile(uid, AccountRole.client)) return;
     await _client(uid).set({
       'uid': uid,
       'type': 'client',
       'name': name.trim(),
       'email': email,
+      'phone': phone.trim(),
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -73,21 +71,26 @@ class AuthProfileService {
   }) async {
     if (registration.cnpj.trim().isEmpty ||
         registration.brandName.trim().isEmpty ||
-        registration.address.trim().isEmpty) {
-      throw const ValidationException(
-        'Preencha CNPJ, nome e endereço do posto.',
-      );
+        registration.phone.trim().isEmpty ||
+        registration.address.trim().isEmpty ||
+        registration.neighborhood.trim().isEmpty ||
+        registration.city.trim().isEmpty) {
+      throw const ValidationException('Preencha todos os dados do posto.');
     }
-    await _ensureNewProfile(uid, AccountRole.gasStation);
-    final coordinates = await _geocoding.resolve(registration.address.trim());
+    if (!await _shouldCreateProfile(uid, AccountRole.gasStation)) return;
+    final coordinates = await _geocoding.resolve(
+      '${registration.address.trim()}, ${registration.neighborhood.trim()}, '
+      '${registration.city.trim()}, Brasil',
+    );
     // Revalida após o trabalho externo de geocodificação; rules são a garantia real.
-    await _ensureNewProfile(uid, AccountRole.gasStation);
+    if (!await _shouldCreateProfile(uid, AccountRole.gasStation)) return;
     final batch = _firestore.batch();
     batch.set(_station(uid), {
       'uid': uid,
       'type': 'gas_station',
       'cnpj': registration.cnpj.trim(),
       'email': email,
+      'phone': registration.phone.trim(),
       'brandName': registration.brandName.trim(),
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -98,7 +101,9 @@ class AuthProfileService {
         'uid': uid,
         'brandName': registration.brandName.trim(),
         'address': registration.address.trim(),
-        'city': FirestoreCollections.mvpCity,
+        'neighborhood': registration.neighborhood.trim(),
+        'city': registration.city.trim(),
+        'state': coordinates.state,
         'latitude': coordinates.latitude,
         'longitude': coordinates.longitude,
         'prices': {
