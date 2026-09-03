@@ -53,6 +53,31 @@ Future<void> pumpSmall(WidgetTester tester, Widget page) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> pumpPushedPage(WidgetTester tester, Widget page) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+      ],
+      child: MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              onPressed: () => Navigator.push<void>(
+                context,
+                MaterialPageRoute(builder: (_) => page),
+              ),
+              child: const Text('Abrir'),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('Abrir'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   final pages = <String, Widget>{
     'login': const LoginPage(),
@@ -94,6 +119,25 @@ void main() {
     expect(
       tester.widget<EditableText>(find.byType(EditableText).last).obscureText,
       isFalse,
+    );
+  });
+
+  testWidgets('cadastro não fecha durante inicialização do ViewModel', (
+    tester,
+  ) async {
+    await pumpPushedPage(tester, const ClientRegistrationPage());
+
+    expect(find.byType(ClientRegistrationPage), findsOneWidget);
+    expect(find.text('Torne-se um Usuário'), findsOneWidget);
+  });
+
+  testWidgets('recuperação não anuncia sucesso antes do envio', (tester) async {
+    await pumpPushedPage(tester, const ForgotPasswordPage());
+
+    expect(find.byType(ForgotPasswordPage), findsOneWidget);
+    expect(
+      find.text('Enviamos as instruções para o seu e-mail.'),
+      findsNothing,
     );
   });
 

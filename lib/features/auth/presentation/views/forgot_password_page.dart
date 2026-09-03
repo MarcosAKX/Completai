@@ -27,21 +27,31 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
-    await ref
-        .read(authViewModelProvider.notifier)
-        .sendPasswordResetEmail(_email.text);
-    if (mounted && !ref.read(authViewModelProvider).hasError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enviamos as instruções para o seu e-mail.'),
-        ),
-      );
-    }
+    await ref.read(passwordResetViewModelProvider.notifier).send(_email.text);
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(authViewModelProvider);
+    ref.listen(passwordResetViewModelProvider, (previous, next) {
+      if (previous?.isLoading == true && next.valueOrNull == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Enviamos as instruções para o seu e-mail.'),
+          ),
+        );
+      }
+    });
+    final reset = ref.watch(passwordResetViewModelProvider);
+    final isLoading = reset.when(
+      data: (_) => false,
+      loading: () => true,
+      error: (_, _) => false,
+    );
+    final error = reset.when<Object?>(
+      data: (_) => null,
+      loading: () => null,
+      error: (error, _) => error,
+    );
     return Scaffold(
       backgroundColor: AppColors.screenBackground,
       appBar: AppBar(
@@ -65,10 +75,10 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
               prefixIcon: const Icon(Icons.mail_outline),
             ),
             const SizedBox(height: AppSpacing.lg),
-            AuthErrorMessage(error: auth.error),
+            AuthErrorMessage(error: error),
             AppButton(
               label: 'Enviar e-mail',
-              isLoading: auth.isLoading,
+              isLoading: isLoading,
               onPressed: _submit,
             ),
           ],

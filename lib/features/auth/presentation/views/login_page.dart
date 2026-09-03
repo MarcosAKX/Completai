@@ -33,13 +33,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
     await ref
-        .read(authViewModelProvider.notifier)
+        .read(loginViewModelProvider.notifier)
         .signIn(email: _email.text, password: _password.text);
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(authViewModelProvider);
+    final login = ref.watch(loginViewModelProvider);
+    final isLoading = login.when(
+      data: (_) => false,
+      loading: () => true,
+      error: (_, _) => false,
+    );
+    final error = login.when<Object?>(
+      data: (_) => null,
+      loading: () => null,
+      error: (error, _) => error,
+    );
     final screenHeight = MediaQuery.sizeOf(context).height;
     final heroHeight = (screenHeight * .42).clamp(285.0, 360.0);
     return Scaffold(
@@ -165,10 +175,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.lg),
-                            AuthErrorMessage(error: auth.error),
+                            AuthErrorMessage(error: error),
                             AppButton(
                               label: 'Entrar',
-                              isLoading: auth.isLoading,
+                              isLoading: isLoading,
                               onPressed: _submit,
                             ),
                             const SizedBox(height: AppSpacing.sm),
@@ -195,7 +205,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     AppButton(
                       label: 'Criar conta',
                       outlined: true,
-                      onPressed: auth.isLoading
+                      onPressed: isLoading
                           ? null
                           : () => Navigator.pushNamed(
                               context,

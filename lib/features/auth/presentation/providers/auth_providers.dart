@@ -9,7 +9,11 @@ import '../../data/services/auth_profile_service.dart';
 import '../../data/services/firebase_auth_service.dart';
 import '../../domain/models/auth_session.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../viewmodels/auth_viewmodel.dart';
+import '../viewmodels/client_registration_viewmodel.dart';
+import '../viewmodels/login_viewmodel.dart';
+import '../viewmodels/password_reset_viewmodel.dart';
+import '../viewmodels/session_viewmodel.dart';
+import '../viewmodels/station_registration_viewmodel.dart';
 
 final firebaseAuthServiceProvider = Provider<FirebaseAuthService>(
   (ref) => FirebaseAuthService(FirebaseAuth.instance, GoogleSignIn.instance),
@@ -29,7 +33,29 @@ final authRepositoryProvider = Provider<AuthRepository>(
     ref.watch(authProfileServiceProvider),
   ),
 );
-final authViewModelProvider =
-    AsyncNotifierProvider<AuthViewModel, AuthSession?>(
-      () => AuthViewModel(authRepositoryProvider),
+final sessionViewModelProvider =
+    AsyncNotifierProvider<SessionViewModel, AuthSession?>(
+      () => SessionViewModel(authRepositoryProvider),
+    );
+final loginViewModelProvider = AsyncNotifierProvider<LoginViewModel, bool>(
+  () =>
+      LoginViewModel(authRepositoryProvider, sessionViewModelProvider.notifier),
+);
+final clientRegistrationViewModelProvider =
+    AsyncNotifierProvider<ClientRegistrationViewModel, bool>(
+      () => ClientRegistrationViewModel(
+        authRepositoryProvider,
+        sessionViewModelProvider.notifier,
+      ),
+    );
+final stationRegistrationViewModelProvider =
+    AsyncNotifierProvider<StationRegistrationViewModel, bool>(
+      () => StationRegistrationViewModel(
+        authRepositoryProvider,
+        sessionViewModelProvider.notifier,
+      ),
+    );
+final passwordResetViewModelProvider =
+    AsyncNotifierProvider<PasswordResetViewModel, bool>(
+      () => PasswordResetViewModel(authRepositoryProvider),
     );
