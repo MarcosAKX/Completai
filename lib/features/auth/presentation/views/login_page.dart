@@ -51,7 +51,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       error: (error, _) => error,
     );
     final screenHeight = MediaQuery.sizeOf(context).height;
-    final heroHeight = (screenHeight * .42).clamp(285.0, 360.0);
+    final heroHeight = (screenHeight * .34).clamp(240.0, 300.0);
     return Scaffold(
       backgroundColor: AppColors.primaryLight,
       body: SingleChildScrollView(
@@ -72,16 +72,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         'Completai!',
                         style: AppTextStyles.title.copyWith(
                           color: AppColors.onPrimary,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w400,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
                         'Seu próximo\nabastecimento\ncomeça aqui',
                         style: AppTextStyles.title.copyWith(
                           color: AppColors.onPrimary,
-                          fontSize: 29,
+                          fontSize: 32,
                           fontWeight: FontWeight.w400,
                           height: 1.08,
                         ),
@@ -89,7 +89,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       const SizedBox(height: 18),
                       SizedBox(
                         width: double.infinity,
-                        height: 70,
+                        height: 90,
                         child: SvgPicture.asset(
                           'assets/images/auth_hero.svg',
                           fit: BoxFit.contain,

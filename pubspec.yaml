@@ -69,6 +69,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/auth_hero.svg
+    - assets/images/loading_mark.svg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

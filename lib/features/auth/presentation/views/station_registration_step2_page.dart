@@ -1,6 +1,7 @@
 // Segunda etapa: cidade editável; a UF é derivada e validada pela geocodificação.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../app/app.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -57,6 +58,11 @@ class _StationRegistrationStep2PageState
     ref.listen(stationRegistrationViewModelProvider, (previous, next) {
       if (previous?.isLoading == true && next.valueOrNull == true) {
         Navigator.popUntil(context, (route) => route.isFirst);
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('Cadastro concluído! Faça login para continuar.'),
+          ),
+        );
       }
     });
     final registration = ref.watch(stationRegistrationViewModelProvider);

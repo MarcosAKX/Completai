@@ -1,6 +1,7 @@
 // Cadastro do motorista em duas operações retomáveis: Auth e perfil privado.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../app/app.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/contact_input_formatters.dart';
@@ -52,6 +53,11 @@ class _ClientRegistrationPageState
     ref.listen(clientRegistrationViewModelProvider, (previous, next) {
       if (previous?.isLoading == true && next.valueOrNull == true) {
         Navigator.popUntil(context, (route) => route.isFirst);
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('Cadastro concluído! Faça login para continuar.'),
+          ),
+        );
       }
     });
     final registration = ref.watch(clientRegistrationViewModelProvider);

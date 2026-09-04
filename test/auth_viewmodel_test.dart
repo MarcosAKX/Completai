@@ -174,10 +174,7 @@ void main() {
     expect(repository.accountCreations, 1);
     expect(repository.clientProfileAttempts, 2);
     expect(container.read(registrationProvider).requireValue, isTrue);
-    expect(
-      container.read(sessionProvider).requireValue!.role,
-      AccountRole.client,
-    );
+    expect(container.read(sessionProvider).requireValue, isNull);
   });
 
   test(
@@ -212,10 +209,7 @@ void main() {
       expect(repository.accountCreations, 1);
       expect(repository.stationProfileAttempts, 1);
       expect(container.read(registrationProvider).requireValue, isTrue);
-      expect(
-        container.read(sessionProvider).requireValue!.role,
-        AccountRole.gasStation,
-      );
+      expect(container.read(sessionProvider).requireValue, isNull);
     },
   );
 

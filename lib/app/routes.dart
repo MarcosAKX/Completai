@@ -1,12 +1,13 @@
 // Reserva a navegação; telas e rotas de autenticação virão na próxima etapa.
+import 'package:completai/app/auth_gate.dart';
 import 'package:flutter/material.dart';
 import '../features/auth/domain/models/station_registration.dart';
 import '../features/auth/presentation/views/client_registration_page.dart';
 import '../features/auth/presentation/views/forgot_password_page.dart';
-import '../features/auth/presentation/views/login_page.dart';
 import '../features/auth/presentation/views/role_selection_page.dart';
 import '../features/auth/presentation/views/station_registration_step1_page.dart';
 import '../features/auth/presentation/views/station_registration_step2_page.dart';
+
 
 abstract final class AppRoutes {
   static const login = '/';
@@ -16,7 +17,7 @@ abstract final class AppRoutes {
   static const stationRegistrationStep1 = '/register/station/step-1';
   static const stationRegistrationStep2 = '/register/station/step-2';
   static final routes = <String, WidgetBuilder>{
-    login: (_) => const LoginPage(),
+    login: (_) => const AuthGate(),
     forgotPassword: (_) => const ForgotPasswordPage(),
     roleSelection: (_) => const RoleSelectionPage(),
     clientRegistration: (_) => const ClientRegistrationPage(),
