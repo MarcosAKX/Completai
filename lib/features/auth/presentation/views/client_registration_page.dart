@@ -1,6 +1,7 @@
 // Cadastro do motorista em duas operações retomáveis: Auth e perfil privado.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../app/app.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/contact_input_formatters.dart';
@@ -26,7 +27,6 @@ class _ClientRegistrationPageState
       _phone = TextEditingController(),
       _password = TextEditingController();
   bool _obscure = true;
-  bool _accountCreated = false;
   @override
   void dispose() {
     _name.dispose();
@@ -38,27 +38,39 @@ class _ClientRegistrationPageState
 
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
-    final notifier = ref.read(authViewModelProvider.notifier);
-    if (!_accountCreated) {
-      await notifier.createAccount(
-        email: _email.text,
-        password: _password.text,
-      );
-      if (ref.read(authViewModelProvider).hasError) return;
-      _accountCreated = true;
-    }
-    await notifier.completeClientRegistration(
-      name: _name.text,
-      phone: _phone.text,
-    );
-    if (mounted && !ref.read(authViewModelProvider).hasError) {
-      Navigator.popUntil(context, (route) => route.isFirst);
-    }
+    await ref
+        .read(clientRegistrationViewModelProvider.notifier)
+        .register(
+          email: _email.text,
+          password: _password.text,
+          name: _name.text,
+          phone: _phone.text,
+        );
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(authViewModelProvider);
+    ref.listen(clientRegistrationViewModelProvider, (previous, next) {
+      if (previous?.isLoading == true && next.valueOrNull == true) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('Cadastro concluído! Faça login para continuar.'),
+          ),
+        );
+      }
+    });
+    final registration = ref.watch(clientRegistrationViewModelProvider);
+    final isLoading = registration.when(
+      data: (_) => false,
+      loading: () => true,
+      error: (_, _) => false,
+    );
+    final error = registration.when<Object?>(
+      data: (_) => null,
+      loading: () => null,
+      error: (error, _) => error,
+    );
     return Scaffold(
       backgroundColor: AppColors.screenBackground,
       appBar: AppBar(
@@ -120,10 +132,10 @@ class _ClientRegistrationPageState
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            AuthErrorMessage(error: auth.error),
+            AuthErrorMessage(error: error),
             AppButton(
               label: 'Criar Conta',
-              isLoading: auth.isLoading,
+              isLoading: isLoading,
               onPressed: _submit,
             ),
             const SizedBox(height: AppSpacing.lg),

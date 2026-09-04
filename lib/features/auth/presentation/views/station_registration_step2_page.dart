@@ -1,6 +1,7 @@
 // Segunda etapa: cidade editável; a UF é derivada e validada pela geocodificação.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../app/app.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -26,7 +27,6 @@ class _StationRegistrationStep2PageState
   final _address = TextEditingController(),
       _neighborhood = TextEditingController(),
       _city = TextEditingController();
-  bool _accountCreated = false;
   @override
   void dispose() {
     _address.dispose();
@@ -37,33 +37,45 @@ class _StationRegistrationStep2PageState
 
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
-    final notifier = ref.read(authViewModelProvider.notifier);
-    if (!_accountCreated) {
-      await notifier.createAccount(
-        email: widget.draft.email,
-        password: widget.draft.password,
-      );
-      if (ref.read(authViewModelProvider).hasError) return;
-      _accountCreated = true;
-    }
-    await notifier.completeStationRegistration(
-      StationRegistration(
-        cnpj: widget.draft.cnpj,
-        brandName: widget.draft.brandName,
-        phone: widget.draft.phone,
-        address: _address.text,
-        neighborhood: _neighborhood.text,
-        city: _city.text,
-      ),
-    );
-    if (mounted && !ref.read(authViewModelProvider).hasError) {
-      Navigator.popUntil(context, (route) => route.isFirst);
-    }
+    await ref
+        .read(stationRegistrationViewModelProvider.notifier)
+        .register(
+          email: widget.draft.email,
+          password: widget.draft.password,
+          registration: StationRegistration(
+            cnpj: widget.draft.cnpj,
+            brandName: widget.draft.brandName,
+            phone: widget.draft.phone,
+            address: _address.text,
+            neighborhood: _neighborhood.text,
+            city: _city.text,
+          ),
+        );
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(authViewModelProvider);
+    ref.listen(stationRegistrationViewModelProvider, (previous, next) {
+      if (previous?.isLoading == true && next.valueOrNull == true) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('Cadastro concluído! Faça login para continuar.'),
+          ),
+        );
+      }
+    });
+    final registration = ref.watch(stationRegistrationViewModelProvider);
+    final isLoading = registration.when(
+      data: (_) => false,
+      loading: () => true,
+      error: (_, _) => false,
+    );
+    final error = registration.when<Object?>(
+      data: (_) => null,
+      loading: () => null,
+      error: (error, _) => error,
+    );
     return Scaffold(
       backgroundColor: AppColors.screenBackground,
       appBar: AppBar(
@@ -103,10 +115,10 @@ class _StationRegistrationStep2PageState
               prefixIcon: const Icon(Icons.location_city_outlined),
             ),
             const SizedBox(height: AppSpacing.lg),
-            AuthErrorMessage(error: auth.error),
+            AuthErrorMessage(error: error),
             AppButton(
               label: 'Finalizar Cadastro',
-              isLoading: auth.isLoading,
+              isLoading: isLoading,
               onPressed: _submit,
             ),
           ],

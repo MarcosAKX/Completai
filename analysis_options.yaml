@@ -13,6 +13,13 @@ analyzer:
   exclude:
     # Templates da CLI Node não fazem parte do aplicativo Flutter.
     - tests/firestore-rules/node_modules/**
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   # The lint rules applied to this project can be customized in the
