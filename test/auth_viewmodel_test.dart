@@ -97,6 +97,22 @@ void main() {
 
   tearDown(() => container.dispose());
 
+  test('sessão respeita duração mínima do carregamento inicial', () async {
+    sessionProvider = AsyncNotifierProvider<SessionViewModel, AuthSession?>(
+      () => SessionViewModel(
+        repositoryProvider,
+        minimumLoadingDuration: const Duration(milliseconds: 500),
+      ),
+    );
+
+    container.read(sessionProvider);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(container.read(sessionProvider).isLoading, isTrue);
+
+    await container.read(sessionProvider.future);
+    expect(container.read(sessionProvider).hasValue, isTrue);
+  });
+
   test('login publica loading e atualiza a sessão compartilhada', () async {
     final loginProvider = AsyncNotifierProvider<LoginViewModel, bool>(
       () => LoginViewModel(repositoryProvider, sessionProvider.notifier),

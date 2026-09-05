@@ -14,7 +14,13 @@ class TestGeocoding extends AddressGeocodingService {
   Future<StationCoordinates> resolve(String address) async {
     calls++;
     if (fail) throw const ValidationException('Endereço não encontrado.');
-    return const StationCoordinates(-20.949, -48.479, 'SP');
+    return const StationCoordinates(
+      -20.949,
+      -48.479,
+      'SP',
+      'Ribeirão Preto',
+      'ribeirao preto',
+    );
   }
 }
 
@@ -135,6 +141,7 @@ void main() {
       'address',
       'neighborhood',
       'city',
+      'citySearchKey',
       'state',
       'latitude',
       'longitude',
@@ -147,6 +154,7 @@ void main() {
       'tags',
     });
     expect(public['city'], 'Ribeirão Preto');
+    expect(public['citySearchKey'], 'ribeirao preto');
     expect(public['state'], 'SP');
     expect(public['neighborhood'], 'Centro');
     expect(public['latitude'], -20.949);

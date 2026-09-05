@@ -22,3 +22,13 @@ class InvalidProfileException extends AppException {
   const InvalidProfileException()
     : super('Perfil inconsistente. Entre em contato com o suporte.');
 }
+
+class LocationPermissionException extends AppException {
+  const LocationPermissionException()
+    : super('Permita o acesso à localização ou escolha uma cidade.');
+}
+
+class LocationUnavailableException extends AppException {
+  const LocationUnavailableException()
+    : super('Não foi possível obter sua localização atual.');
+}

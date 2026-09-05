@@ -49,7 +49,8 @@
   brandName: string,
   address: string,
   neighborhood: string,       // bairro — ajuda o motorista a localizar o posto
-  city: string,                // cidade digitada pelo dono do posto, texto livre
+  city: string,                // cidade canônica retornada pela geocodificação
+  citySearchKey: string,       // cidade normalizada para consulta (minúscula/sem acento)
   state: string,                // UF, derivado da geocodificação (não do texto
                                  // digitado) — ver seção "Escopo geográfico"
   latitude: number,           // geocodificado 1x no cadastro
@@ -147,7 +148,7 @@ O MVP aceita cadastro de postos em **qualquer cidade do estado de São
 Paulo** (não mais restrito a Bebedouro). A restrição de estado é aplicada
 assim:
 
-1. O dono do posto digita endereço, bairro e cidade livremente.
+1. O dono do posto digita endereço, bairro e cidade livremente para localizar o endereço.
 2. No cadastro, a `AddressGeocodingService` usa `placemarkFromAddress`
    (não só `locationFromAddress`) para obter o `administrativeArea`
    (UF) retornado pela geocodificação — **não o texto que o usuário
@@ -160,7 +161,11 @@ assim:
    geocodificação, não do input do usuário — evita que alguém digite
    "SP" manualmente para burlar a restrição enquanto o endereço real é de
    outro estado.
-5. **Limitação conhecida:** essa validação acontece no client. Um cliente
+5. O campo `city` persistido também vem da geocodificação. O client deriva
+   `citySearchKey` em minúsculas, sem acentos e com espaços normalizados. A
+   home deriva a mesma chave da cidade detectada pelo GPS e consulta apenas
+   os postos correspondentes, evitando divergências de grafia.
+6. **Limitação conhecida:** essa validação acontece no client. Um cliente
    adulterado (chamando a API do Firestore diretamente) poderia, em teoria,
    gravar `state: "SP"` mesmo com endereço de outro estado, já que as rules
    validam apenas o valor do campo `state`, não a veracidade da

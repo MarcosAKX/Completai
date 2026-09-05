@@ -8,7 +8,6 @@ import '../features/auth/presentation/views/role_selection_page.dart';
 import '../features/auth/presentation/views/station_registration_step1_page.dart';
 import '../features/auth/presentation/views/station_registration_step2_page.dart';
 
-
 abstract final class AppRoutes {
   static const login = '/';
   static const forgotPassword = '/forgot-password';

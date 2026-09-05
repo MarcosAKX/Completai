@@ -19,6 +19,10 @@ class PermissionFailure extends Failure {
   const PermissionFailure(super.message, {super.cause});
 }
 
+class LocationFailure extends Failure {
+  const LocationFailure(super.message, {super.cause});
+}
+
 class ValidationFailure extends Failure {
   const ValidationFailure(super.message, {super.cause});
 }

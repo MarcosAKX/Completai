@@ -4,14 +4,24 @@ import '../../domain/models/auth_session.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 class SessionViewModel extends AsyncNotifier<AuthSession?> {
-  SessionViewModel(this._repositoryProvider);
+  SessionViewModel(
+    this._repositoryProvider, {
+    this.minimumLoadingDuration = Duration.zero,
+  });
 
   final ProviderListenable<AuthRepository> _repositoryProvider;
+  final Duration minimumLoadingDuration;
 
   AuthRepository get _repository => ref.read(_repositoryProvider);
 
   @override
-  Future<AuthSession?> build() => _repository.restoreSession();
+  Future<AuthSession?> build() async {
+    final stopwatch = Stopwatch()..start();
+    final session = await _repository.restoreSession();
+    final remaining = minimumLoadingDuration - stopwatch.elapsed;
+    if (remaining > Duration.zero) await Future<void>.delayed(remaining);
+    return session;
+  }
 
   void setSession(AuthSession session) {
     state = AsyncData(session);

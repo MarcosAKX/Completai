@@ -64,6 +64,11 @@ test('dono não cria posto público fora de SP', async () => {
     ...publicStation('station'), state: 'RJ',
   }));
 });
+test('dono não cria posto público sem chave normalizada de cidade', async () => {
+  const data = publicStation('station');
+  delete data.citySearchKey;
+  await assertFails(setDoc(doc(database('station'), 'public_stations/station'), data));
+});
 for (const uid of [undefined, 'alice']) {
   test(`não dono ${uid ?? 'anônimo'} não cria posto público`, async () => {
     await assertFails(setDoc(doc(database(uid), 'public_stations/station'), publicStation('station')));

@@ -6,9 +6,11 @@
 ## Sobre o projeto
 
 CompletAI — app Flutter (Android primário) de descoberta/comparação de
-postos de combustível em Bebedouro/SP. Firebase no plano Spark (gratuito,
-**sem Cloud Functions**). MVVM com Riverpod. TCC de graduação — prazo real,
-qualidade de código conta na avaliação.
+postos de combustível em qualquer cidade do estado de São Paulo. A cidade
+deve ser confirmada pela geocodificação e o campo `state` permanece restrito
+a `SP`. Firebase no plano Spark (gratuito, **sem Cloud Functions**). MVVM com
+Riverpod. TCC de graduação — prazo real, qualidade de código conta na
+avaliação.
 
 ## Documentos que você DEVE ler antes de qualquer tarefa
 
@@ -91,19 +93,32 @@ documentação.
 
 ## O que já existe (não recriar)
 
-- Feature `auth/` completa em `data/domain/presentation`, com
-  `AuthViewModel` (`AsyncNotifier`), `AuthRepository`/`AuthRepositoryImpl`,
-  serviços de Firebase Auth, perfil e geocodificação. 16 testes passando.
-- `core/theme/`, `core/errors/`, `core/widgets/` (AppButton, AppTextField)
-  já estabelecidos como padrão a seguir.
+- Feature `auth/` completa em `data/domain/presentation`, com ViewModels
+  separados de sessão, login, cadastro e recuperação (`AsyncNotifier`),
+  `AuthRepository`/`AuthRepositoryImpl` e serviços de autenticação, perfil e
+  geocodificação.
+- Telas de login, recuperação, escolha de papel e cadastro de cliente/posto,
+  com responsividade validada em 320x568.
+- Splash em três estágios: recurso nativo Android, carregamento Web e animação
+  Flutter com bomba, mangueira e restauração de sessão com duração mínima.
+- Home funcional do motorista em `station_discovery/`, seguindo MVVM. Detecta
+  a cidade pelo GPS, consulta `public_stations` por `citySearchKey`, calcula
+  distância no aparelho e ordena por menor preço com distância como desempate.
+  Inclui busca, filtro por avaliação/aberto, troca sequencial por swipe, toque
+  direto no combustível, pull-to-refresh e painel inicial do posto.
+- O cadastro do posto persiste `city` canônica e `citySearchKey` derivadas da
+  geocodificação. As rules exigem os campos em escritas do dono.
+- `core/theme/`, `core/errors/`, `core/widgets/` já estabelecidos como padrão;
+  O seletor de combustível usa opções amplas com ícones, contraste de seleção
+  e área de toque confortável. 43 testes Flutter passando.
 - Estrutura de pastas da feature `admin/` reservada (vazia), aguardando
   implementação.
 
 ## Ainda não existe / próximos passos típicos
 
-- Nenhuma tela de UI (`views/`) foi criada em nenhuma feature.
-- Testes de `firestore.rules` no Emulator (em andamento).
-- Features de listagem/descoberta de postos, favoritos, reviews, admin.
+- Executar os testes atualizados de `firestore.rules` no Emulator antes do
+  próximo deploy das rules.
+- Ampliar o perfil do posto; implementar favoritos, reviews e admin.
 
 ## Nota sobre manutenção deste arquivo
 
