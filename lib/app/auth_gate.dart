@@ -6,6 +6,8 @@ import '../core/widgets/app_splash_mark.dart';
 import '../features/auth/presentation/providers/auth_providers.dart';
 import '../features/auth/presentation/views/login_page.dart';
 import '../features/auth/presentation/views/role_selection_page.dart';
+import '../features/auth/domain/models/auth_session.dart';
+import '../features/station_discovery/presentation/views/station_discovery_page.dart';
 import 'home_placeholder.dart';
 
 class AuthGate extends ConsumerWidget {
@@ -20,6 +22,9 @@ class AuthGate extends ConsumerWidget {
       data: (session) {
         if (session == null) return const LoginPage();
         if (session.needsProfile) return const RoleSelectionPage();
+        if (session.role == AccountRole.client) {
+          return const StationDiscoveryPage();
+        }
         return HomePlaceholder(session: session);
       },
     );

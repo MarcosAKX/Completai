@@ -12,11 +12,15 @@ void main() {
   test('aceita São Paulo e normaliza state para SP', () async {
     final service = AddressGeocodingService.forTesting(
       location,
-      (_) async => [Placemark(administrativeArea: 'São Paulo')],
+      (_) async => [
+        Placemark(administrativeArea: 'São Paulo', locality: 'São Paulo'),
+      ],
     );
     final result = await service.resolve('Avenida Paulista, São Paulo, Brasil');
     expect(result.state, 'SP');
     expect(result.latitude, -23.55);
+    expect(result.city, 'São Paulo');
+    expect(result.citySearchKey, 'sao paulo');
   });
 
   test('rejeita endereço geocodificado fora de SP', () async {

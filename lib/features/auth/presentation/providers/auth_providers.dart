@@ -35,7 +35,10 @@ final authRepositoryProvider = Provider<AuthRepository>(
 );
 final sessionViewModelProvider =
     AsyncNotifierProvider<SessionViewModel, AuthSession?>(
-      () => SessionViewModel(authRepositoryProvider),
+      () => SessionViewModel(
+        authRepositoryProvider,
+        minimumLoadingDuration: const Duration(milliseconds: 1200),
+      ),
     );
 final loginViewModelProvider = AsyncNotifierProvider<LoginViewModel, bool>(
   () =>

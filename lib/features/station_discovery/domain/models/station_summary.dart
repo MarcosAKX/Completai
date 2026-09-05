@@ -1,0 +1,53 @@
+// Dados públicos necessários para listar e comparar postos.
+enum FuelType { gasoline, ethanol, diesel }
+
+class DailyHours {
+  const DailyHours({required this.open, required this.close});
+  final String open;
+  final String close;
+}
+
+class StationSummary {
+  const StationSummary({
+    required this.uid,
+    required this.name,
+    required this.neighborhood,
+    required this.city,
+    required this.latitude,
+    required this.longitude,
+    required this.prices,
+    required this.averageRating,
+    required this.reviewCount,
+    required this.pricesUpdatedAt,
+    required this.todayHours,
+    this.distanceKm,
+  });
+  final String uid;
+  final String name;
+  final String neighborhood;
+  final String city;
+  final double latitude;
+  final double longitude;
+  final Map<FuelType, double?> prices;
+  final double averageRating;
+  final int reviewCount;
+  final DateTime? pricesUpdatedAt;
+  final DailyHours? todayHours;
+  final double? distanceKm;
+
+  double? priceFor(FuelType fuel) => prices[fuel];
+  StationSummary withDistance(double value) => StationSummary(
+    uid: uid,
+    name: name,
+    neighborhood: neighborhood,
+    city: city,
+    latitude: latitude,
+    longitude: longitude,
+    prices: prices,
+    averageRating: averageRating,
+    reviewCount: reviewCount,
+    pricesUpdatedAt: pricesUpdatedAt,
+    todayHours: todayHours,
+    distanceKm: value,
+  );
+}

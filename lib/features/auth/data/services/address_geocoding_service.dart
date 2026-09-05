@@ -2,12 +2,21 @@
 import 'package:geocoding/geocoding.dart';
 import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/utils/city_search_key.dart';
 
 class StationCoordinates {
-  const StationCoordinates(this.latitude, this.longitude, this.state);
+  const StationCoordinates(
+    this.latitude,
+    this.longitude,
+    this.state,
+    this.city,
+    this.citySearchKey,
+  );
   final double latitude;
   final double longitude;
   final String state;
+  final String city;
+  final String citySearchKey;
 }
 
 class AddressGeocodingService {
@@ -43,6 +52,14 @@ class AddressGeocodingService {
         'Cadastro disponível apenas para postos no estado de São Paulo.',
       );
     }
+    final placemark = placemarks.first;
+    final city = (placemark.locality ?? placemark.subAdministrativeArea ?? '')
+        .trim();
+    if (city.isEmpty) {
+      throw const ValidationException(
+        'Não foi possível confirmar a cidade do endereço.',
+      );
+    }
     final location = locations.first;
     if (!location.latitude.isFinite ||
         !location.longitude.isFinite ||
@@ -56,6 +73,8 @@ class AddressGeocodingService {
       location.latitude,
       location.longitude,
       FirestoreCollections.defaultState,
+      city,
+      citySearchKey(city),
     );
   }
 }
