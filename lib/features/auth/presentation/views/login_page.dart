@@ -19,17 +19,26 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
+  // Chave do formulário, usada para validar todos os campos de uma vez.
   final _form = GlobalKey<FormState>();
+
+  // Controllers dos campos de e-mail e senha.
   final _email = TextEditingController();
   final _password = TextEditingController();
+
+  // Se true, a senha aparece oculta (pontinhos); se false, aparece em texto.
   bool _obscure = true;
+
   @override
   void dispose() {
+    // Libera os controllers quando a tela é destruída.
     _email.dispose();
     _password.dispose();
     super.dispose();
   }
 
+  // Executado ao tocar em "Entrar": valida o formulário e chama a
+  // ViewModel para autenticar.
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
     await ref
@@ -39,7 +48,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Estado atual da ViewModel (carregando, erro ou dado).
     final login = ref.watch(loginViewModelProvider);
+
     final isLoading = login.when(
       data: (_) => false,
       loading: () => true,
@@ -50,13 +61,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       loading: () => null,
       error: (error, _) => error,
     );
+
+    // Altura da tela do aparelho.
     final screenHeight = MediaQuery.sizeOf(context).height;
-    final heroHeight = (screenHeight * .34).clamp(240.0, 300.0);
+    // Altura do bloco azul: 18% da altura da tela, entre 130px e 170px.
+    final heroHeight = (screenHeight * .18).clamp(130.0, 170.0);
+
     return Scaffold(
       backgroundColor: AppColors.primaryLight,
+      // Permite rolar a tela caso o conteúdo não caiba.
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Bloco azul do topo (hero): título, frase e ilustração.
             Container(
               constraints: BoxConstraints(minHeight: heroHeight),
               width: double.infinity,
@@ -68,6 +85,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Nome do app.
                       Text(
                         'Completai!',
                         style: AppTextStyles.title.copyWith(
@@ -77,19 +95,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ),
                       ),
                       const SizedBox(height: 12),
+                      // Frase de destaque abaixo do nome do app.
                       Text(
                         'Seu próximo\nabastecimento\ncomeça aqui',
                         style: AppTextStyles.title.copyWith(
                           color: AppColors.onPrimary,
-                          fontSize: 32,
+                          fontSize: 28,
                           fontWeight: FontWeight.w400,
                           height: 1.08,
                         ),
                       ),
                       const SizedBox(height: 18),
+                      // Ilustração SVG do posto/rota.
                       SizedBox(
                         width: double.infinity,
-                        height: 90,
+                        height: 80,
                         child: SvgPicture.asset(
                           'assets/images/auth_hero.svg',
                           fit: BoxFit.contain,
@@ -101,20 +121,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ),
             ),
+
+            // Bloco do formulário: fundo lilás claro, card branco por cima.
             Transform.translate(
+              // Sobrepõe 1px no hero para não deixar uma linha entre as cores.
               offset: const Offset(0, -1),
               child: Container(
                 width: double.infinity,
-                constraints: BoxConstraints(
-                  minHeight: screenHeight - heroHeight,
-                ),
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
                 decoration: const BoxDecoration(color: AppColors.primaryLight),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Card branco com o formulário de login.
                     Container(
-                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 22),
+                      padding: const EdgeInsets.fromLTRB(24, 18, 24, 12),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(
@@ -133,6 +154,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            // Título do card.
                             Text(
                               'Entre na sua conta',
                               style: AppTextStyles.title.copyWith(
@@ -141,6 +163,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.lg),
+
+                            // Campo de e-mail.
                             AppTextField(
                               label: 'E-mail',
                               controller: _email,
@@ -152,6 +176,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               prefixIcon: const Icon(Icons.mail_outline),
                             ),
                             const SizedBox(height: AppSpacing.md),
+
+                            // Campo de senha, com botão para mostrar/ocultar.
                             AppTextField(
                               label: 'Senha',
                               controller: _password,
@@ -175,13 +201,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.lg),
+
+                            // Mensagem de erro, exibida quando `error` não é nulo.
                             AuthErrorMessage(error: error),
+
+                            // Botão de login; mostra spinner enquanto carrega.
                             AppButton(
                               label: 'Entrar',
                               isLoading: isLoading,
                               onPressed: _submit,
                             ),
                             const SizedBox(height: AppSpacing.sm),
+
+                            // Link para a tela de recuperação de senha.
                             TextButton(
                               onPressed: () => Navigator.pushNamed(
                                 context,
@@ -193,7 +225,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Texto acima do botão de criar conta.
                     Text(
                       'Ainda não tem conta?',
                       textAlign: TextAlign.center,
@@ -202,6 +236,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
+
+                    // Botão de contorno que leva à escolha de perfil (cliente ou posto).
                     AppButton(
                       label: 'Criar conta',
                       outlined: true,
@@ -213,6 +249,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
+
+                    // Frase final de reforço de marca.
                     Text(
                       'Preços locais para decisões mais rápidas.',
                       textAlign: TextAlign.center,
