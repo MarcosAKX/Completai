@@ -1,6 +1,8 @@
 // Botão base acessível, com estado ocupado e tokens do tema.
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+
 
 class AppButton extends StatelessWidget {
   const AppButton({
@@ -39,6 +41,10 @@ class AppButton extends StatelessWidget {
         child: outlined
             ? OutlinedButton(
                 onPressed: isLoading ? null : onPressed,
+                    style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary, width: 1.5),
+                    foregroundColor: AppColors.primary,
+                 ),
                 child: child,
               )
             : FilledButton(
