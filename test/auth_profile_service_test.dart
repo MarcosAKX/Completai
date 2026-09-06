@@ -1,19 +1,27 @@
-// Testa as escritas reais do serviço contra Firestore em memória (não valida rules).
+// Testa as escritas reais do serviço contra Firestore em memória
+// (não valida rules).
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:completai/core/errors/exceptions.dart';
-import 'package:completai/shared/services/address_geocoding_service.dart';
 import 'package:completai/features/auth/data/services/auth_profile_service.dart';
+import 'package:completai/features/auth/domain/models/auth_session.dart';
 import 'package:completai/features/auth/domain/models/station_registration.dart';
+import 'package:completai/shared/services/address_geocoding_service.dart';
 
 class TestGeocoding extends AddressGeocodingService {
   bool fail = false;
   int calls = 0;
+
   @override
   Future<StationCoordinates> resolve(String address) async {
     calls++;
-    if (fail) throw const ValidationException('Endereço não encontrado.');
+
+    if (fail) {
+      throw const ValidationException('Endereço não encontrado.');
+    }
+
     return const StationCoordinates(
       -20.949,
       -48.479,
@@ -28,6 +36,7 @@ void main() {
   late FakeFirebaseFirestore firestore;
   late TestGeocoding geocoding;
   late AuthProfileService service;
+
   const station = StationRegistration(
     cnpj: '12345678000190',
     brandName: 'Posto Teste',
@@ -36,9 +45,11 @@ void main() {
     neighborhood: 'Centro',
     city: 'Ribeirão Preto',
   );
+
   setUp(() {
     firestore = FakeFirebaseFirestore();
     geocoding = TestGeocoding();
+
     service = AuthProfileService(firestore, geocoding);
   });
 
@@ -51,6 +62,7 @@ void main() {
         name: 'Ana',
         phone: '(17) 99999-9999',
       );
+
       await expectLater(
         service.createStation(
           uid: 'u1',
@@ -59,14 +71,17 @@ void main() {
         ),
         throwsA(isA<RoleConflictException>()),
       );
+
       expect(
         (await firestore.collection('gas_stations').doc('u1').get()).exists,
         isFalse,
       );
+
       expect(
         (await firestore.collection('public_stations').doc('u1').get()).exists,
         isFalse,
       );
+
       expect(geocoding.calls, 0);
     },
   );
@@ -77,6 +92,7 @@ void main() {
       email: 'a@b.com',
       registration: station,
     );
+
     await expectLater(
       service.createClient(
         uid: 'u1',
@@ -86,6 +102,7 @@ void main() {
       ),
       throwsA(isA<RoleConflictException>()),
     );
+
     expect(
       (await firestore.collection('users').doc('u1').get()).exists,
       isFalse,
@@ -96,6 +113,7 @@ void main() {
     'geocodificação com falha não salva nenhum documento de posto',
     () async {
       geocoding.fail = true;
+
       await expectLater(
         service.createStation(
           uid: 'u1',
@@ -104,10 +122,12 @@ void main() {
         ),
         throwsA(isA<ValidationException>()),
       );
+
       expect(
         (await firestore.collection('gas_stations').doc('u1').get()).exists,
         isFalse,
       );
+
       expect(
         (await firestore.collection('public_stations').doc('u1').get()).exists,
         isFalse,
@@ -121,10 +141,13 @@ void main() {
       email: 'a@b.com',
       registration: station,
     );
+
     final private = (await firestore.collection('gas_stations').doc('u1').get())
         .data()!;
+
     final public =
         (await firestore.collection('public_stations').doc('u1').get()).data()!;
+
     expect(private.keys.toSet(), {
       'uid',
       'type',
@@ -135,6 +158,7 @@ void main() {
       'createdAt',
       'updatedAt',
     });
+
     expect(public.keys.toSet(), {
       'uid',
       'brandName',
@@ -153,12 +177,19 @@ void main() {
       'services',
       'tags',
     });
+
     expect(public['city'], 'Ribeirão Preto');
+
     expect(public['citySearchKey'], 'ribeirao preto');
+
     expect(public['state'], 'SP');
+
     expect(public['neighborhood'], 'Centro');
+
     expect(public['latitude'], -20.949);
+
     expect(public['longitude'], -48.479);
+
     expect(public['prices'], {
       'gasolineRegular': null,
       'gasolineAdditive': null,
@@ -166,6 +197,7 @@ void main() {
       'dieselS10': null,
       'dieselS500': null,
     });
+
     expect(public['openingHours'], {
       'monday': null,
       'tuesday': null,
@@ -175,9 +207,13 @@ void main() {
       'saturday': null,
       'sunday': null,
     });
+
     expect(public['reviewCount'], 0);
+
     expect(private['createdAt'], isA<Timestamp>());
+
     expect(private['phone'], '(17) 3333-4444');
+
     expect(geocoding.calls, 1);
   });
 
@@ -190,12 +226,14 @@ void main() {
         name: 'Ana',
         phone: '(17) 99999-9999',
       );
+
       await service.createClient(
         uid: 'u1',
         email: 'a@b.com',
         name: 'Outro',
         phone: '(17) 98888-8888',
       );
+
       expect(
         (await firestore.collection('users').doc('u1').get()).data()!['name'],
         'Ana',
@@ -203,15 +241,32 @@ void main() {
     },
   );
 
+  test('leitura do perfil retorna papel e nome do cliente', () async {
+    await service.createClient(
+      uid: 'u1',
+      email: 'a@b.com',
+      name: 'Marcos Antonio',
+      phone: '(17) 99999-9999',
+    );
+
+    final profile = await service.readProfile('u1');
+
+    expect(profile.role, AccountRole.client);
+
+    expect(profile.name, 'Marcos Antonio');
+  });
+
   test('leitura rejeita estado legado com dois papéis', () async {
     await firestore.collection('users').doc('u1').set({
       'uid': 'u1',
       'type': 'client',
     });
+
     await firestore.collection('gas_stations').doc('u1').set({
       'uid': 'u1',
       'type': 'gas_station',
     });
+
     await expectLater(
       service.readRole('u1'),
       throwsA(isA<RoleConflictException>()),

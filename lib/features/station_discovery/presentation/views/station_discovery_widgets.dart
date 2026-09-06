@@ -9,6 +9,11 @@ class _HomeHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // A sessão já possui o nome carregado pelo Repository.
+    // Aqui usamos apenas o primeiro nome para a saudação.
+    final session = ref.watch(sessionViewModelProvider).valueOrNull;
+    final firstName = session?.firstName;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(
@@ -39,6 +44,7 @@ class _HomeHeader extends ConsumerWidget {
                   ),
                 ),
               ),
+
               IconButton(
                 tooltip: 'Notificações',
                 icon: const Icon(
@@ -55,7 +61,9 @@ class _HomeHeader extends ConsumerWidget {
                   );
                 },
               ),
+
               const SizedBox(width: 4),
+
               PopupMenuButton<String>(
                 tooltip: 'Perfil',
                 onSelected: (value) {
@@ -90,21 +98,28 @@ class _HomeHeader extends ConsumerWidget {
               ),
             ],
           ),
+
           const SizedBox(height: 32),
-          const Text(
-            'Olá!',
-            style: TextStyle(
+
+          // Saudação personalizada.
+          Text(
+            firstName == null ? 'Olá!' : 'Olá, $firstName!',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 34,
               fontWeight: FontWeight.w800,
             ),
           ),
+
           const SizedBox(height: 8),
+
           const Text(
             'Tudo pronto para o seu próximo abastecimento.',
             style: TextStyle(color: Colors.white, fontSize: 18, height: 1.35),
           ),
+
           const SizedBox(height: 24),
+
           InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () => _chooseCity(context, ref),
@@ -117,7 +132,9 @@ class _HomeHeader extends ConsumerWidget {
               child: Row(
                 children: [
                   const Icon(Icons.location_on_outlined, color: Colors.white),
+
                   const SizedBox(width: 8),
+
                   Expanded(
                     child: Text(
                       '${state.city} · ${state.stations.length} postos',
@@ -127,6 +144,7 @@ class _HomeHeader extends ConsumerWidget {
                       ),
                     ),
                   ),
+
                   const Icon(
                     Icons.keyboard_arrow_down_rounded,
                     color: Colors.white,
@@ -169,7 +187,9 @@ class _QuickActions extends ConsumerWidget {
               },
             ),
           ),
+
           const SizedBox(width: 10),
+
           const Expanded(
             child: _QuickActionCard(
               icon: Icons.receipt_long_outlined,
@@ -177,7 +197,9 @@ class _QuickActions extends ConsumerWidget {
               subtitle: 'Acompanhe seu histórico',
             ),
           ),
+
           const SizedBox(width: 10),
+
           const Expanded(
             child: _QuickActionCard(
               icon: Icons.star_border_rounded,
@@ -224,7 +246,9 @@ class _QuickActionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, color: AppColors.primary, size: 25),
+
               const SizedBox(height: 10),
+
               Text(
                 title,
                 maxLines: 2,
@@ -235,7 +259,9 @@ class _QuickActionCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+
               const SizedBox(height: 6),
+
               Text(
                 subtitle,
                 maxLines: 2,
@@ -246,7 +272,9 @@ class _QuickActionCard extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
               ),
+
               const SizedBox(height: 9),
+
               const Align(
                 alignment: Alignment.centerRight,
                 child: Icon(
@@ -333,13 +361,18 @@ class _Controls extends ConsumerWidget {
                 ),
               ],
             ),
+
             const SizedBox(height: 14),
+
             StationFuelSelector(
               selected: state.fuel as FuelType,
               onSelected: vm.selectFuel,
             ),
+
             const SizedBox(height: 12),
+
             const Divider(),
+
             Row(
               children: [
                 const Expanded(
@@ -405,9 +438,13 @@ class _LocationError extends ConsumerWidget {
               size: 52,
               color: AppColors.primary,
             ),
+
             const SizedBox(height: 16),
+
             Text(message, textAlign: TextAlign.center),
+
             const SizedBox(height: 16),
+
             FilledButton(
               onPressed: () => _chooseCity(context, ref),
               child: const Text('Escolher cidade manualmente'),

@@ -3,12 +3,14 @@ part of 'station_discovery_page.dart';
 
 class _StationCard extends ConsumerWidget {
   const _StationCard({required this.station, required this.fuel});
+
   final StationSummary station;
   final FuelType fuel;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final open = isStationOpen(DateTime.now(), station.todayHours);
+
     final coverBytes = ref
         .watch(stationCoverProvider(station.uid))
         .valueOrNull
@@ -27,53 +29,98 @@ class _StationCard extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
+              //
+              // Informações principais do posto.
+              //
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  //
+                  // Foto / imagem do posto.
+                  //
                   StationLogo(
                     stationName: station.name,
                     imageBytes: coverBytes,
-                    size: 52,
+                    size: 72,
                   ),
-                  const SizedBox(width: 12),
+
+                  const SizedBox(width: 14),
+
+                  //
+                  // Nome, bandeira, distância e funcionamento.
+                  //
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        //
+                        // Nome agora possui uma linha própria.
+                        //
+                        Text(
+                          station.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            height: 1.2,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        //
+                        // Bandeira seguida da distância.
+                        //
+                        Wrap(
+                          spacing: 7,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Flexible(
-                              child: Text(
-                                station.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            StationBrandBadge(brand: station.brand),
+
+                            if (station.distanceKm != null)
+                              Text(
+                                '${station.distanceKm!.toStringAsFixed(1)} km',
                                 style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 6),
-                            StationBrandBadge(brand: station.brand),
                           ],
                         ),
-                        Text(
-                          '${station.neighborhood}${station.distanceKm == null ? '' : ' · ${station.distanceKm!.toStringAsFixed(1)} km'}',
+
+                        const SizedBox(height: 8),
+
+                        //
+                        // Situação do posto.
+                        //
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Chip(
+                            visualDensity: VisualDensity.compact,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            label: Text(open ? 'Aberto agora' : 'Fechado'),
+                            avatar: Icon(
+                              Icons.circle,
+                              size: 9,
+                              color: open ? Colors.green : Colors.grey,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Chip(
-                    label: Text(open ? 'Aberto agora' : 'Fechado'),
-                    avatar: Icon(
-                      Icons.circle,
-                      size: 9,
-                      color: open ? Colors.green : Colors.grey,
-                    ),
-                  ),
                 ],
               ),
+
               const Divider(height: 24),
+
+              //
+              // Preços dos combustíveis.
+              //
               Row(
                 children: FuelType.values
                     .map(
@@ -111,14 +158,26 @@ class _StationCard extends ConsumerWidget {
                     )
                     .toList(),
               ),
+
               const SizedBox(height: 12),
+
+              //
+              // Avaliação e atualização dos preços.
+              //
               Row(
                 children: [
                   const Icon(Icons.star, color: AppColors.accent, size: 17),
-                  Text(
-                    ' ${station.averageRating.toStringAsFixed(1)} · ${station.reviewCount} avaliações',
+
+                  Flexible(
+                    child: Text(
+                      ' ${station.averageRating.toStringAsFixed(1)}'
+                      ' · ${station.reviewCount} avaliações',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const Spacer(),
+
+                  const SizedBox(width: 8),
+
                   Text(
                     _updated(station.pricesUpdatedAt),
                     style: const TextStyle(fontSize: 11),
@@ -135,40 +194,60 @@ class _StationCard extends ConsumerWidget {
 
 class _StationPanel extends StatelessWidget {
   const _StationPanel({required this.station});
+
   final StationSummary station;
+
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  station.name,
-                  style: Theme.of(context).textTheme.headlineSmall,
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    station.name,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
                 ),
-              ),
-              StationBrandBadge(brand: station.brand),
+
+                const SizedBox(width: 8),
+
+                StationBrandBadge(brand: station.brand),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            Text('${station.neighborhood}, ${station.city}'),
+
+            if (station.distanceKm != null) ...[
+              const SizedBox(height: 6),
+              Text('${station.distanceKm!.toStringAsFixed(1)} km de distância'),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text('${station.neighborhood}, ${station.city}'),
-          const SizedBox(height: 16),
-          Text(
-            '${station.averageRating.toStringAsFixed(1)} de avaliação · ${station.reviewCount} avaliações',
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'O perfil completo do posto será ampliado com serviços, horários e avaliações.',
-          ),
-        ],
+
+            const SizedBox(height: 16),
+
+            Text(
+              '${station.averageRating.toStringAsFixed(1)} de avaliação'
+              ' · ${station.reviewCount} avaliações',
+            ),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'O perfil completo do posto será ampliado com serviços, '
+              'horários e avaliações.',
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 String _fuelName(FuelType value) => switch (value) {
@@ -176,11 +255,17 @@ String _fuelName(FuelType value) => switch (value) {
   FuelType.ethanol => 'Etanol',
   FuelType.diesel => 'Diesel',
 };
+
 String _price(double? value) => value == null
     ? '—'
     : 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
+
 String _updated(DateTime? date) {
-  if (date == null) return 'Sem atualização';
+  if (date == null) {
+    return 'Sem atualização';
+  }
+
   final days = DateTime.now().difference(date).inDays;
+
   return days == 0 ? 'Atualizado hoje' : 'Atualizado há $days d';
 }
