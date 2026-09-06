@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod/riverpod.dart';
 import '../../data/repositories/auth_repository_impl.dart';
-import '../../data/services/address_geocoding_service.dart';
+import '../../../../shared/services/address_geocoding_provider.dart';
 import '../../data/services/auth_profile_service.dart';
 import '../../data/services/firebase_auth_service.dart';
 import '../../domain/models/auth_session.dart';
@@ -17,9 +17,6 @@ import '../viewmodels/station_registration_viewmodel.dart';
 
 final firebaseAuthServiceProvider = Provider<FirebaseAuthService>(
   (ref) => FirebaseAuthService(FirebaseAuth.instance, GoogleSignIn.instance),
-);
-final addressGeocodingServiceProvider = Provider<AddressGeocodingService>(
-  (ref) => AddressGeocodingService(),
 );
 final authProfileServiceProvider = Provider<AuthProfileService>(
   (ref) => AuthProfileService(

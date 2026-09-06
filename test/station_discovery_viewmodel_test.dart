@@ -3,6 +3,7 @@ import 'package:completai/features/station_discovery/domain/models/station_disco
 import 'package:completai/features/station_discovery/domain/models/station_summary.dart';
 import 'package:completai/features/station_discovery/domain/repositories/station_discovery_repository.dart';
 import 'package:completai/features/station_discovery/presentation/providers/station_discovery_providers.dart';
+import 'package:completai/shared/models/station_brand.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -29,6 +30,7 @@ class FakeDiscoveryRepository implements StationDiscoveryRepository {
 const _cheap = StationSummary(
   uid: '1',
   name: 'Posto Barato',
+  brand: StationBrand.branca,
   neighborhood: 'Centro',
   city: 'Bebedouro',
   latitude: 0,
@@ -43,6 +45,7 @@ const _cheap = StationSummary(
 const _near = StationSummary(
   uid: '2',
   name: 'Posto Próximo',
+  brand: StationBrand.shell,
   neighborhood: 'Jardim',
   city: 'Bebedouro',
   latitude: 0,

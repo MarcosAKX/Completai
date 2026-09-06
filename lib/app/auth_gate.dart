@@ -8,7 +8,7 @@ import '../features/auth/presentation/views/login_page.dart';
 import '../features/auth/presentation/views/role_selection_page.dart';
 import '../features/auth/domain/models/auth_session.dart';
 import '../features/station_discovery/presentation/views/station_discovery_page.dart';
-import 'home_placeholder.dart';
+import '../features/station_panel/presentation/views/station_panel_page.dart';
 
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
@@ -25,7 +25,7 @@ class AuthGate extends ConsumerWidget {
         if (session.role == AccountRole.client) {
           return const StationDiscoveryPage();
         }
-        return HomePlaceholder(session: session);
+        return const StationPanelPage();
       },
     );
   }

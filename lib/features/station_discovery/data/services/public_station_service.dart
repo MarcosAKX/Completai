@@ -1,5 +1,6 @@
 // Consulta apenas os dados públicos necessários à lista, com limite explícito.
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../shared/models/station_brand.dart';
 import '../../domain/models/station_summary.dart';
 
 class PublicStationService {
@@ -34,6 +35,7 @@ class PublicStationService {
     return StationSummary(
       uid: doc.id,
       name: data['brandName'] as String? ?? 'Posto',
+      brand: StationBrand.fromWire(data['brand']),
       neighborhood: data['neighborhood'] as String? ?? '',
       city: data['city'] as String? ?? '',
       latitude: number(data['latitude']) ?? 0,

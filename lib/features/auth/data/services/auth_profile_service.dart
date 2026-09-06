@@ -4,7 +4,7 @@ import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../domain/models/auth_session.dart';
 import '../../domain/models/station_registration.dart';
-import 'address_geocoding_service.dart';
+import '../../../../shared/services/address_geocoding_service.dart';
 
 class AuthProfileService {
   AuthProfileService(this._firestore, this._geocoding);

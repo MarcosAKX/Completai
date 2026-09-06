@@ -56,8 +56,15 @@ lib/
 │           ├── views/
 │           └── widgets/
 └── shared/
-    └── models/
+    ├── models/          # modelos usados por mais de uma feature
+    └── services/        # serviços usados por mais de uma feature
 ```
+
+> `shared/` guarda o que é genuinamente transversal a features. Hoje:
+> `shared/models/station_brand.dart` (bandeira do posto — usada pela
+> listagem do motorista e pelo painel do dono) e
+> `shared/services/address_geocoding_service.dart` (geocodificação de
+> endereço — usada no cadastro e na edição de endereço do posto).
 
 ## 3. Limite de tamanho — regra contínua, não campanha de limpeza
 
@@ -100,6 +107,11 @@ contínuo, não tarefa de refatoração à parte.
 4. Listas paginadas com `.limit()`.
 5. Denormalizar (ver `SCHEMA-FIRESTORE.md`: `averageRating`/`reviewCount`
    agregados evitam N+1 de reviews desde o início).
+6. **Imagem nunca no documento de listagem.** A foto do posto fica em
+   `station_covers/{uid}` (base64 JPEG ≤ ~500 KB), separada de
+   `public_stations`, e é carregada sob demanda (detalhe / card visível,
+   memoizada por uid), nunca na query em lote da home. Ver
+   `features/station_cover/`.
 
 ## 7. Segurança de papel (lição do P0 anterior)
 

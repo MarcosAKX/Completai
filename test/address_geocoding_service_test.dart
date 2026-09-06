@@ -1,6 +1,6 @@
 // Garante que UF vem do placemark e que endereço fora de SP falha antes da escrita.
 import 'package:completai/core/errors/exceptions.dart';
-import 'package:completai/features/auth/data/services/address_geocoding_service.dart';
+import 'package:completai/shared/services/address_geocoding_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geocoding/geocoding.dart';
 

@@ -12,5 +12,6 @@ export const publicStation = (uid) => ({
   openingHours: { monday: null, tuesday: null, wednesday: null, thursday: null, friday: null, saturday: null, sunday: null },
   averageRating: 0, reviewCount: 0, services: [], tags: [],
 });
+export const stationCover = (uid, size = 1000) => ({ uid, image: 'a'.repeat(size), updatedAt: createdAt });
 export const review = (uid, rating = 5) => ({ clientUid: uid, clientName: 'Cliente teste', rating, comment: 'Atendimento bom', createdAt });
 export const report = (uid) => ({ reporterUid: uid, reason: 'Dados incorretos', createdAt });
