@@ -1,14 +1,21 @@
 // Cards e painel do posto, separados da composição principal.
 part of 'station_discovery_page.dart';
 
-class _StationCard extends StatelessWidget {
+class _StationCard extends ConsumerWidget {
   const _StationCard({required this.station, required this.fuel});
   final StationSummary station;
   final FuelType fuel;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final open = isStationOpen(DateTime.now(), station.todayHours);
+    final coverBytes = ref
+        .watch(stationCoverProvider(station.uid))
+        .valueOrNull
+        ?.bytes;
+
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => showModalBottomSheet<void>(
@@ -22,20 +29,32 @@ class _StationCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    child: Text(station.name.substring(0, 1).toUpperCase()),
+                  StationLogo(
+                    stationName: station.name,
+                    imageBytes: coverBytes,
+                    size: 52,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          station.name,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                station.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            StationBrandBadge(brand: station.brand),
+                          ],
                         ),
                         Text(
                           '${station.neighborhood}${station.distanceKm == null ? '' : ' · ${station.distanceKm!.toStringAsFixed(1)} km'}',
@@ -43,6 +62,7 @@ class _StationCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Chip(
                     label: Text(open ? 'Aberto agora' : 'Fechado'),
                     avatar: Icon(
@@ -124,7 +144,17 @@ class _StationPanel extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(station.name, style: Theme.of(context).textTheme.headlineSmall),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  station.name,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ),
+              StationBrandBadge(brand: station.brand),
+            ],
+          ),
           const SizedBox(height: 8),
           Text('${station.neighborhood}, ${station.city}'),
           const SizedBox(height: 16),

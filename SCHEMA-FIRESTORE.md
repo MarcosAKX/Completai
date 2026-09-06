@@ -46,7 +46,10 @@
 ```
 {
   uid: string,
-  brandName: string,
+  brandName: string,           // nome do posto exibido ao cliente
+  brand: string,               // bandeira: 'shell' | 'ipiranga' | 'petrobras' |
+                               // 'ale' | 'raizen' | 'branca' | 'outra'.
+                               // Ausente/desconhecido = tratado como 'branca'.
   address: string,
   neighborhood: string,       // bairro — ajuda o motorista a localizar o posto
   city: string,                // cidade canônica retornada pela geocodificação
@@ -85,6 +88,36 @@
 > deve atualizar esses dois campos via transação Firestore no mesmo momento
 > (ver seção "Consistência" abaixo). Isso evita 1 leitura de posto + N
 > leituras de review por posto listado.
+
+### `station_covers/{uid}` (leitura pública; escrita só pelo dono)
+```
+{
+  uid: string,
+  image: string,               // foto de exibição em JPEG base64, ~1080px no
+                               // maior lado, comprimida pelo client para
+                               // ≤ ~500 KB (rules limitam a string a 700 000
+                               // chars para respeitar o limite de 1 MiB/doc)
+  updatedAt: timestamp
+}
+```
+
+> **Por que a foto fica fora de `public_stations`:** a home do motorista lê
+> `public_stations` em lote (`.limit(50)` por cidade) para comparar preços.
+> Embutir a foto ali faria essa query baixar dezenas de imagens de uma vez,
+> violando a regra de leitura barata (ARCHITECTURE.md seção 6). Em documento
+> separado, a foto é buscada **sob demanda**: quando o motorista abre um
+> posto e conforme os cards entram na tela (memoizada por uid na sessão),
+> nunca em massa. A bandeira (`public_stations.brand`) fica no documento
+> principal porque é texto curto e aparece já na listagem.
+>
+> **Limitação conhecida — formato da imagem:** a compressão
+> (`core/utils/jpeg_compressor.dart`, pacote `image`) decodifica JPEG, PNG,
+> GIF, BMP, TIFF e WebP. **HEIC/HEIF (padrão do iPhone) não é suportado** —
+> a seleção falha com `ValidationException` ("Não foi possível ler a
+> imagem"). Android é a plataforma primária e a galeria do Android entrega
+> JPEG, então o impacto é baixo; suporte a HEIC exigiria plugin nativo
+> (`flutter_image_compress`), que foi evitado para manter os testes e o
+> build desktop funcionando.
 
 ### `public_stations/{uid}/reviews/{clientUid}` (leitura pública; 1 review por cliente por posto)
 ```
@@ -182,6 +215,25 @@ adicionados após a implementação inicial das telas de cadastro. **Nenhuma
 mudança em `firestore.rules` foi necessária** — as regras de criação/edição
 desses documentos validam apenas dono, tipo e tamanho de arrays, não a lista
 completa de campos permitidos, então os novos campos já são aceitos.
+
+## Painel do posto (bandeira, foto, edição de preços/nome/endereço)
+
+`public_stations.brand` foi adicionado junto com o painel administrativo do
+dono (`features/station_panel`). **Não exigiu mudança em `firestore.rules`**
+pelo mesmo motivo acima — a regra de `update` do dono não lista campos, só
+valida `state`/`city`/`citySearchKey` e o tamanho de `services`/`tags`, que
+continuam presentes no documento após um `update` parcial.
+
+A coleção `station_covers/{uid}` **exigiu** um bloco novo em
+`firestore.rules` (leitura pública, escrita só do dono, teto de 700 000
+chars na string `image`). É a única mudança de rules desta tarefa.
+
+O painel edita `public_stations` por `update` parcial (preços via
+`prices.<chave>` + `pricesUpdatedAt`; bandeira via `brand`) e o nome/telefone
+por **batch** em `gas_stations` + `public_stations` (o nome vive nas duas).
+Editar o endereço re-executa a geocodificação (`AddressGeocodingService`,
+agora em `lib/shared/services/`) e regrava cidade canônica, `citySearchKey`,
+`state` e coordenadas — mesma validação SP do cadastro.
 
 ## Consistência (batches e transações)
 

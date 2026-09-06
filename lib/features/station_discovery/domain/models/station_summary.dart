@@ -1,4 +1,6 @@
 // Dados públicos necessários para listar e comparar postos.
+import '../../../../shared/models/station_brand.dart';
+
 enum FuelType { gasoline, ethanol, diesel }
 
 class DailyHours {
@@ -11,6 +13,7 @@ class StationSummary {
   const StationSummary({
     required this.uid,
     required this.name,
+    required this.brand,
     required this.neighborhood,
     required this.city,
     required this.latitude,
@@ -24,6 +27,7 @@ class StationSummary {
   });
   final String uid;
   final String name;
+  final StationBrand brand;
   final String neighborhood;
   final String city;
   final double latitude;
@@ -39,6 +43,7 @@ class StationSummary {
   StationSummary withDistance(double value) => StationSummary(
     uid: uid,
     name: name,
+    brand: brand,
     neighborhood: neighborhood,
     city: city,
     latitude: latitude,

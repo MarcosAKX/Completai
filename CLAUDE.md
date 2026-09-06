@@ -108,17 +108,39 @@ documentação.
   direto no combustível, pull-to-refresh e painel inicial do posto.
 - O cadastro do posto persiste `city` canônica e `citySearchKey` derivadas da
   geocodificação. As rules exigem os campos em escritas do dono.
+- Painel administrativo do dono do posto em `station_panel/` (MVVM). Substitui
+  o antigo `HomePlaceholder`. Bottom nav de 4 abas: **Preços** (edita os 5
+  combustíveis, publicação por diff), **Informações/Horários/Avaliações**
+  (placeholder). Card "Prévia para clientes" espelha o card da listagem;
+  "Editar exibição" ajusta **bandeira** (`public_stations.brand`) e **foto**.
+  Tela de **Perfil** edita nome, celular e endereço (re-geocodifica, valida
+  SP); CNPJ só exibe; botão Sair.
+- Foto do posto em `station_cover/` (feature própria, consumida pelo painel e
+  pela listagem do motorista): documento `station_covers/{uid}` com JPEG
+  base64 comprimido no client (`core/utils/jpeg_compressor.dart`, pacote
+  `image`), carregado sob demanda via `stationCoverProvider(uid)`.
+- `AddressGeocodingService` movido de `auth/` para `lib/shared/services/`
+  (usado no cadastro e na edição de endereço). `StationBrand` em
+  `lib/shared/models/`. Mapeador comum de erro de infra em
+  `core/errors/failure_mapper.dart` (`guardInfra` com timeout).
 - `core/theme/`, `core/errors/`, `core/widgets/` já estabelecidos como padrão;
   O seletor de combustível usa opções amplas com ícones, contraste de seleção
-  e área de toque confortável. 43 testes Flutter passando.
+  e área de toque confortável. `core/widgets/station_brand_badge.dart` (selo
+  da bandeira) e `core/widgets/station_logo.dart` (quadrado arredondado com a
+  foto ou iniciais/ícone de fallback) são usados no painel e na listagem.
 - Estrutura de pastas da feature `admin/` reservada (vazia), aguardando
   implementação.
+- Dependências novas: `image` e `image_picker` (foto do posto).
 
 ## Ainda não existe / próximos passos típicos
 
-- Executar os testes atualizados de `firestore.rules` no Emulator antes do
-  próximo deploy das rules.
-- Ampliar o perfil do posto; implementar favoritos, reviews e admin.
+- **Rodar os testes do Emulator antes do próximo push que toque
+  `firestore.rules`** — esta tarefa adicionou o bloco `station_covers` e
+  casos de teste novos em `tests/firestore-rules/`; ainda não foram
+  executados no Emulator nesta máquina.
+- Abas **Informações** (editar `services`/`tags`), **Horários** (editar
+  `openingHours`) e **Avaliações** do painel do posto — hoje placeholder.
+- Favoritos, reviews e admin.
 
 ## Nota sobre manutenção deste arquivo
 

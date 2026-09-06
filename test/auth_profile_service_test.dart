@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:completai/core/errors/exceptions.dart';
-import 'package:completai/features/auth/data/services/address_geocoding_service.dart';
+import 'package:completai/shared/services/address_geocoding_service.dart';
 import 'package:completai/features/auth/data/services/auth_profile_service.dart';
 import 'package:completai/features/auth/domain/models/station_registration.dart';
 

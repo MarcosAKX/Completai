@@ -3,8 +3,8 @@ import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { before, beforeEach, after, test } from 'node:test';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, runTransaction } from 'firebase/firestore';
-import { client, station, publicStation, review, report } from './fixtures.mjs';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
+import { client, station, publicStation, stationCover, review, report } from './fixtures.mjs';
 
 let env;
 const database = (uid, claims = {}) => uid ? env.authenticatedContext(uid, claims).firestore() : env.unauthenticatedContext().firestore();
@@ -58,6 +58,12 @@ test('dono cria e edita dados públicos', async () => {
   const ref = doc(database('station'), 'public_stations/station');
   await assertSucceeds(setDoc(ref, publicStation('station')));
   await assertSucceeds(updateDoc(ref, { brandName: 'Nome atualizado', 'prices.ethanol': 3.5 }));
+});
+test('dono grava bandeira e serviços em public_stations sem regra extra', async () => {
+  await seed(['public_stations/station', publicStation('station')]);
+  await assertSucceeds(updateDoc(doc(database('station'), 'public_stations/station'), {
+    brand: 'shell', services: ['calibragem', 'conveniência'],
+  }));
 });
 test('dono não cria posto público fora de SP', async () => {
   await assertFails(setDoc(doc(database('station'), 'public_stations/station'), {
@@ -140,6 +146,34 @@ for (const path of ['station_reports/station/reports/alice', 'public_stations/st
     assert.equal((await assertSucceeds(getDocs(collection(db, path.split('/').slice(0, -1).join('/'))))).size, 1);
   });
 }
+test('qualquer um lê a foto do posto', async () => {
+  await seed(['station_covers/station', stationCover('station')]);
+  for (const db of [database(), database('alice'), database('station')]) {
+    await assertSucceeds(getDoc(doc(db, 'station_covers/station')));
+  }
+});
+test('dono cria e substitui a própria foto', async () => {
+  const ref = doc(database('station'), 'station_covers/station');
+  await assertSucceeds(setDoc(ref, stationCover('station')));
+  await assertSucceeds(setDoc(ref, stationCover('station', 2000)));
+});
+test('não dono e anônimo não escrevem foto de posto', async () => {
+  for (const uid of [undefined, 'alice']) {
+    await assertFails(setDoc(doc(database(uid), 'station_covers/station'), stationCover('station')));
+  }
+});
+test('foto acima do teto de tamanho é rejeitada', async () => {
+  await assertFails(setDoc(doc(database('station'), 'station_covers/station'), stationCover('station', 700001)));
+});
+test('foto vazia é rejeitada', async () => {
+  await assertFails(setDoc(doc(database('station'), 'station_covers/station'), { uid: 'station', image: '' }));
+});
+test('dono remove a própria foto; terceiro não', async () => {
+  await seed(['station_covers/station', stationCover('station')]);
+  await assertFails(deleteDoc(doc(database('alice'), 'station_covers/station')));
+  await assertSucceeds(deleteDoc(doc(database('station'), 'station_covers/station')));
+});
+
 test('dados privados só podem ser lidos pelo dono, nem admin tem exceção', async () => {
   await seed(['gas_stations/station', station('station')]);
   await assertSucceeds(getDoc(doc(database('station'), 'gas_stations/station')));

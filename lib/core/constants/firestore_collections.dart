@@ -3,5 +3,6 @@ abstract final class FirestoreCollections {
   static const users = 'users';
   static const gasStations = 'gas_stations';
   static const publicStations = 'public_stations';
+  static const stationCovers = 'station_covers';
   static const defaultState = 'SP';
 }
