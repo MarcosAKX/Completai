@@ -1,46 +1,81 @@
 // Lê e grava perfis. Cadastro sempre consulta o servidor para validar exclusividade.
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../shared/services/address_geocoding_service.dart';
 import '../../domain/models/auth_session.dart';
 import '../../domain/models/station_registration.dart';
-import '../../../../shared/services/address_geocoding_service.dart';
+
+class AuthProfileData {
+  const AuthProfileData({required this.role, this.name});
+
+  final AccountRole? role;
+  final String? name;
+}
 
 class AuthProfileService {
   AuthProfileService(this._firestore, this._geocoding);
+
   final FirebaseFirestore _firestore;
   final AddressGeocodingService _geocoding;
 
   DocumentReference<Map<String, dynamic>> _client(String uid) =>
       _firestore.collection(FirestoreCollections.users).doc(uid);
+
   DocumentReference<Map<String, dynamic>> _station(String uid) =>
       _firestore.collection(FirestoreCollections.gasStations).doc(uid);
 
-  Future<AccountRole?> readRole(String uid) async {
+  // Lê de uma só vez o papel e os dados necessários para a sessão.
+  Future<AuthProfileData> readProfile(String uid) async {
     final documents = await Future.wait([
       _client(uid).get(const GetOptions(source: Source.server)),
       _station(uid).get(const GetOptions(source: Source.server)),
     ]);
+
     if (documents[0].exists && documents[1].exists) {
       throw const RoleConflictException();
     }
+
     for (var index = 0; index < documents.length; index++) {
       final data = documents[index].data();
-      if (data == null) continue;
+
+      if (data == null) {
+        continue;
+      }
+
       final expected = index == 0 ? 'client' : 'gas_station';
+
       if (data['uid'] != uid || data['type'] != expected) {
         throw const InvalidProfileException();
       }
-      return index == 0 ? AccountRole.client : AccountRole.gasStation;
+
+      if (index == 0) {
+        return AuthProfileData(
+          role: AccountRole.client,
+          name: (data['name'] as String?)?.trim(),
+        );
+      }
+
+      return const AuthProfileData(role: AccountRole.gasStation);
     }
-    return null;
+
+    return const AuthProfileData(role: null);
+  }
+
+  // Mantido para compatibilidade com os pontos que ainda precisam
+  // somente descobrir o papel da conta.
+  Future<AccountRole?> readRole(String uid) async {
+    return (await readProfile(uid)).role;
   }
 
   Future<bool> _shouldCreateProfile(String uid, AccountRole requested) async {
     final existing = await readRole(uid);
+
     if (existing != null && existing != requested) {
       throw const RoleConflictException();
     }
+
     return existing == null;
   }
 
@@ -53,7 +88,11 @@ class AuthProfileService {
     if (name.trim().isEmpty || phone.trim().isEmpty) {
       throw const ValidationException('Informe seu nome e celular.');
     }
-    if (!await _shouldCreateProfile(uid, AccountRole.client)) return;
+
+    if (!await _shouldCreateProfile(uid, AccountRole.client)) {
+      return;
+    }
+
     await _client(uid).set({
       'uid': uid,
       'type': 'client',
@@ -77,14 +116,24 @@ class AuthProfileService {
         registration.city.trim().isEmpty) {
       throw const ValidationException('Preencha todos os dados do posto.');
     }
-    if (!await _shouldCreateProfile(uid, AccountRole.gasStation)) return;
+
+    if (!await _shouldCreateProfile(uid, AccountRole.gasStation)) {
+      return;
+    }
+
     final coordinates = await _geocoding.resolve(
-      '${registration.address.trim()}, ${registration.neighborhood.trim()}, '
+      '${registration.address.trim()}, '
+      '${registration.neighborhood.trim()}, '
       '${registration.city.trim()}, Brasil',
     );
-    // Revalida após o trabalho externo de geocodificação; rules são a garantia real.
-    if (!await _shouldCreateProfile(uid, AccountRole.gasStation)) return;
+
+    // Revalida após a geocodificação.
+    if (!await _shouldCreateProfile(uid, AccountRole.gasStation)) {
+      return;
+    }
+
     final batch = _firestore.batch();
+
     batch.set(_station(uid), {
       'uid': uid,
       'type': 'gas_station',
@@ -95,6 +144,7 @@ class AuthProfileService {
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
     batch.set(
       _firestore.collection(FirestoreCollections.publicStations).doc(uid),
       {
@@ -130,6 +180,7 @@ class AuthProfileService {
         'tags': <String>[],
       },
     );
+
     await batch.commit();
   }
 }
