@@ -1,5 +1,6 @@
 // Coordena localização, consulta e distância, traduzindo erros técnicos.
 import 'package:geolocator/geolocator.dart';
+
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/city_search_key.dart';
@@ -11,9 +12,13 @@ import '../services/public_station_service.dart';
 
 class StationDiscoveryRepositoryImpl implements StationDiscoveryRepository {
   StationDiscoveryRepositoryImpl(this._location, this._stations);
+
   final DeviceLocationService _location;
   final PublicStationService _stations;
+
   final Map<String, List<StationSummary>> _cache = {};
+
+  List<String>? _citiesCache;
 
   @override
   Future<StationDiscoveryResult> loadCurrentCity({
@@ -21,7 +26,9 @@ class StationDiscoveryRepositoryImpl implements StationDiscoveryRepository {
   }) async {
     try {
       final location = await _location.detect();
+
       final stations = await _load(location.citySearchKey, forceRefresh);
+
       return StationDiscoveryResult(
         city: location.city,
         stations: stations
@@ -57,7 +64,11 @@ class StationDiscoveryRepositoryImpl implements StationDiscoveryRepository {
   }) async {
     try {
       final trimmed = city.trim();
-      if (trimmed.isEmpty) throw const ValidationFailure('Informe uma cidade.');
+
+      if (trimmed.isEmpty) {
+        throw const ValidationFailure('Informe uma cidade.');
+      }
+
       return StationDiscoveryResult(
         city: trimmed,
         stations: await _load(citySearchKey(trimmed), forceRefresh),
@@ -72,10 +83,35 @@ class StationDiscoveryRepositoryImpl implements StationDiscoveryRepository {
     }
   }
 
+  @override
+  Future<List<String>> loadAvailableCities({bool forceRefresh = false}) async {
+    try {
+      if (!forceRefresh && _citiesCache != null) {
+        return _citiesCache!;
+      }
+
+      final cities = await _stations.fetchAvailableCities();
+
+      _citiesCache = cities;
+
+      return cities;
+    } catch (error) {
+      throw UnexpectedFailure(
+        'Não foi possível carregar as cidades disponíveis.',
+        cause: error,
+      );
+    }
+  }
+
   Future<List<StationSummary>> _load(String key, bool refresh) async {
-    if (!refresh && _cache[key] != null) return _cache[key]!;
+    if (!refresh && _cache[key] != null) {
+      return _cache[key]!;
+    }
+
     final value = await _stations.fetchByCityKey(key);
+
     _cache[key] = value;
+
     return value;
   }
 }

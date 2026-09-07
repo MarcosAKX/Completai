@@ -1,10 +1,12 @@
 // Consulta apenas os dados públicos necessários à lista, com limite explícito.
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../../../shared/models/station_brand.dart';
 import '../../domain/models/station_summary.dart';
 
 class PublicStationService {
   PublicStationService(this._firestore);
+
   final FirebaseFirestore _firestore;
 
   Future<List<StationSummary>> fetchByCityKey(String key) async {
@@ -13,13 +15,33 @@ class PublicStationService {
         .where('citySearchKey', isEqualTo: key)
         .limit(50)
         .get();
+
     return snapshot.docs.map(_map).toList(growable: false);
+  }
+
+  Future<List<String>> fetchAvailableCities() async {
+    final snapshot = await _firestore.collection('public_stations').get();
+
+    final cities =
+        snapshot.docs
+            .map((doc) => doc.data()['city'])
+            .whereType<String>()
+            .map((city) => city.trim())
+            .where((city) => city.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    return cities;
   }
 
   StationSummary _map(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data();
+
     final prices = data['prices'] as Map<String, dynamic>? ?? const {};
+
     final hours = data['openingHours'] as Map<String, dynamic>? ?? const {};
+
     const weekdays = [
       'monday',
       'tuesday',
@@ -29,9 +51,14 @@ class PublicStationService {
       'saturday',
       'sunday',
     ];
+
     final today =
         hours[weekdays[DateTime.now().weekday - 1]] as Map<String, dynamic>?;
-    double? number(Object? value) => value is num ? value.toDouble() : null;
+
+    double? number(Object? value) {
+      return value is num ? value.toDouble() : null;
+    }
+
     return StationSummary(
       uid: doc.id,
       name: data['brandName'] as String? ?? 'Posto',
