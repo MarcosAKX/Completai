@@ -1,4 +1,4 @@
-// Protege a estrutura principal da home do motorista.
+// Protege a estrutura principal da Home do motorista.
 import 'package:completai/features/station_discovery/domain/models/station_discovery_result.dart';
 import 'package:completai/features/station_discovery/domain/models/station_summary.dart';
 import 'package:completai/features/station_discovery/domain/repositories/station_discovery_repository.dart';
@@ -23,6 +23,11 @@ class _FakeStationRepository implements StationDiscoveryRepository {
     bool forceRefresh = false,
   }) async {
     return StationDiscoveryResult(city: city, stations: const []);
+  }
+
+  @override
+  Future<List<String>> loadAvailableCities({bool forceRefresh = false}) async {
+    return const ['Barretos', 'Bebedouro'];
   }
 }
 
@@ -61,6 +66,11 @@ class _FakeStationRepositoryWithStation implements StationDiscoveryRepository {
   }) async {
     return StationDiscoveryResult(city: city, stations: const [station]);
   }
+
+  @override
+  Future<List<String>> loadAvailableCities({bool forceRefresh = false}) async {
+    return const ['Barretos', 'Bebedouro'];
+  }
 }
 
 void main() {
@@ -97,6 +107,9 @@ void main() {
       find.widgetWithText(TextField, 'Buscar posto ou bairro'),
       findsOneWidget,
     );
+
+    // O switch antigo saiu da área de combustível.
+    expect(find.text('Mostrar somente postos abertos'), findsNothing);
   });
 
   testWidgets('home continua permitindo atualização por gesto', (tester) async {
@@ -134,9 +147,6 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // A lista fica mais abaixo na Home.
-    // Como o SliverList cria os cards somente quando entram na tela,
-    // rolamos a página antes de procurar o posto.
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
 
     await tester.pumpAndSettle();
@@ -147,7 +157,113 @@ void main() {
 
     expect(find.text('1.8 km'), findsOneWidget);
 
-    // O bairro não deve mais aparecer no card da listagem.
     expect(find.text('Centro'), findsNothing);
   });
+
+  testWidgets('filtros oferece distância avaliação e postos abertos', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          stationDiscoveryRepositoryProvider.overrideWithValue(
+            _FakeStationRepository(),
+          ),
+        ],
+        child: const MaterialApp(home: StationDiscoveryPage()),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Filtros'));
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Distância máxima'), findsOneWidget);
+
+    expect(find.text('Qualquer'), findsOneWidget);
+
+    expect(find.text('2 km'), findsOneWidget);
+
+    expect(find.text('5 km'), findsOneWidget);
+
+    expect(find.text('10 km'), findsOneWidget);
+
+    expect(find.text('Avaliação mínima'), findsOneWidget);
+
+    expect(find.text('Somente postos abertos'), findsOneWidget);
+
+    expect(find.text('Limpar filtros'), findsOneWidget);
+
+    expect(find.text('Aplicar'), findsOneWidget);
+  });
+
+  testWidgets('lista de postos permite escolher ordenação', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          stationDiscoveryRepositoryProvider.overrideWithValue(
+            _FakeStationRepositoryWithStation(),
+          ),
+        ],
+        child: const MaterialApp(home: StationDiscoveryPage()),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ordenar'), findsOneWidget);
+
+    await tester.tap(find.text('Ordenar'));
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Menor preço'), findsWidgets);
+
+    expect(find.text('Mais próximo'), findsOneWidget);
+
+    expect(find.text('Melhor avaliação'), findsOneWidget);
+  });
+
+  testWidgets(
+    'seletor de cidade mostra somente cidades com postos cadastrados',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            stationDiscoveryRepositoryProvider.overrideWithValue(
+              _FakeStationRepository(),
+            ),
+          ],
+          child: const MaterialApp(home: StationDiscoveryPage()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final citySelector = find.textContaining('Bebedouro');
+
+      expect(citySelector, findsWidgets);
+
+      await tester.tap(citySelector.first);
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Escolher cidade'), findsOneWidget);
+
+      expect(find.text('Barretos'), findsOneWidget);
+
+      // Bebedouro aparece no seletor da Home e também
+      // entre as cidades disponíveis.
+      expect(find.text('Bebedouro'), findsWidgets);
+
+      // O antigo campo de digitação não deve mais existir.
+      expect(find.widgetWithText(TextField, 'Ex.: Bebedouro'), findsNothing);
+    },
+  );
 }
