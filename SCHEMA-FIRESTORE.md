@@ -164,6 +164,12 @@ Um mesmo `uid` **nunca** pode ter simultaneamente `users/{uid}` e
 `gas_stations/{uid}`. As `firestore.rules` devem negar a criação de um se o
 outro já existir. Ver `firestore.rules` para a implementação.
 
+Além disso, criar ou editar `public_stations/{uid}` e `station_covers/{uid}`
+exige que o estado final da operação contenha `gas_stations/{uid}` com
+`type: "gas_station"`. A validação usa `getAfter()` para aceitar o batch
+atômico do cadastro, que cria o perfil privado e o documento público juntos,
+mas impede clientes e contas sem perfil de publicarem dados de posto.
+
 ## Geolocalização
 
 - `latitude`/`longitude` são gravados **uma única vez**, no momento do
@@ -180,6 +186,11 @@ outro já existir. Ver `firestore.rules` para a implementação.
 O MVP aceita cadastro de postos em **qualquer cidade do estado de São
 Paulo** (não mais restrito a Bebedouro). A restrição de estado é aplicada
 assim:
+
+> **Cobertura inicial da descoberta:** embora o schema continue preparado
+> para cidades de todo o estado, o seletor manual do MVP oferece somente
+> `Bebedouro`. Essa lista é definida localmente no domínio e não consulta
+> todos os documentos de `public_stations`, evitando leituras desnecessárias.
 
 1. O dono do posto digita endereço, bairro e cidade livremente para localizar o endereço.
 2. No cadastro, a `AddressGeocodingService` usa `placemarkFromAddress`
@@ -226,7 +237,9 @@ continuam presentes no documento após um `update` parcial.
 
 A coleção `station_covers/{uid}` **exigiu** um bloco novo em
 `firestore.rules` (leitura pública, escrita só do dono, teto de 700 000
-chars na string `image`). É a única mudança de rules desta tarefa.
+chars na string `image`). A escrita também exige o papel privado de posto,
+assim como `public_stations`, impedindo que um motorista publique uma capa
+usando o próprio uid.
 
 O painel edita `public_stations` por `update` parcial (preços via
 `prices.<chave>` + `pricesUpdatedAt`; bandeira via `brand`) e o nome/telefone

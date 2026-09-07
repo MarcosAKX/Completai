@@ -17,7 +17,7 @@ final stationPanelRepositoryProvider = Provider<StationPanelRepository>(
       FirebaseFirestore.instance,
       ref.watch(addressGeocodingServiceProvider),
     ),
-    uid: () => FirebaseAuth.instance.currentUser?.uid,
+    uidProvider: () => FirebaseAuth.instance.currentUser?.uid,
   ),
 );
 

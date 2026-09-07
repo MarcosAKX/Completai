@@ -24,11 +24,6 @@ class _FakeStationRepository implements StationDiscoveryRepository {
   }) async {
     return StationDiscoveryResult(city: city, stations: const []);
   }
-
-  @override
-  Future<List<String>> loadAvailableCities({bool forceRefresh = false}) async {
-    return const ['Barretos', 'Bebedouro'];
-  }
 }
 
 class _FakeStationRepositoryWithStation implements StationDiscoveryRepository {
@@ -65,11 +60,6 @@ class _FakeStationRepositoryWithStation implements StationDiscoveryRepository {
     bool forceRefresh = false,
   }) async {
     return StationDiscoveryResult(city: city, stations: const [station]);
-  }
-
-  @override
-  Future<List<String>> loadAvailableCities({bool forceRefresh = false}) async {
-    return const ['Barretos', 'Bebedouro'];
   }
 }
 
@@ -230,40 +220,39 @@ void main() {
     expect(find.text('Melhor avaliação'), findsOneWidget);
   });
 
-  testWidgets(
-    'seletor de cidade mostra somente cidades com postos cadastrados',
-    (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            stationDiscoveryRepositoryProvider.overrideWithValue(
-              _FakeStationRepository(),
-            ),
-          ],
-          child: const MaterialApp(home: StationDiscoveryPage()),
-        ),
-      );
+  testWidgets('seletor de cidade oferece somente Bebedouro no MVP', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          stationDiscoveryRepositoryProvider.overrideWithValue(
+            _FakeStationRepository(),
+          ),
+        ],
+        child: const MaterialApp(home: StationDiscoveryPage()),
+      ),
+    );
 
-      await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
 
-      final citySelector = find.textContaining('Bebedouro');
+    final citySelector = find.textContaining('Bebedouro');
 
-      expect(citySelector, findsWidgets);
+    expect(citySelector, findsWidgets);
 
-      await tester.tap(citySelector.first);
+    await tester.tap(citySelector.first);
 
-      await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
 
-      expect(find.text('Escolher cidade'), findsOneWidget);
+    expect(find.text('Escolher cidade'), findsOneWidget);
 
-      expect(find.text('Barretos'), findsOneWidget);
+    expect(find.text('Barretos'), findsNothing);
 
-      // Bebedouro aparece no seletor da Home e também
-      // entre as cidades disponíveis.
-      expect(find.text('Bebedouro'), findsWidgets);
+    // Bebedouro aparece no seletor da Home e também
+    // entre as cidades disponíveis.
+    expect(find.text('Bebedouro'), findsWidgets);
 
-      // O antigo campo de digitação não deve mais existir.
-      expect(find.widgetWithText(TextField, 'Ex.: Bebedouro'), findsNothing);
-    },
-  );
+    // O antigo campo de digitação não deve mais existir.
+    expect(find.widgetWithText(TextField, 'Ex.: Bebedouro'), findsNothing);
+  });
 }

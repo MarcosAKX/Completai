@@ -18,25 +18,27 @@ class StationFuelSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: FuelType.values.map((fuel) {
-        final isSelected = selected == fuel;
+      children: FuelType.values
+          .map((fuel) {
+            final isSelected = selected == fuel;
 
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: StationFuelOption(
-              key: ValueKey(
-                isSelected
-                    ? 'fuel-selected-${fuel.name}'
-                    : 'fuel-${fuel.name}',
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: StationFuelOption(
+                  key: ValueKey(
+                    isSelected
+                        ? 'fuel-selected-${fuel.name}'
+                        : 'fuel-${fuel.name}',
+                  ),
+                  fuel: fuel,
+                  selected: isSelected,
+                  onTap: () => onSelected(fuel),
+                ),
               ),
-              fuel: fuel,
-              selected: isSelected,
-              onTap: () => onSelected(fuel),
-            ),
-          ),
-        );
-      }).toList(growable: false),
+            );
+          })
+          .toList(growable: false),
     );
   }
 }
@@ -62,18 +64,12 @@ class StationFuelOption extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
-        constraints: const BoxConstraints(
-          minHeight: 68,
-        ),
+        constraints: const BoxConstraints(minHeight: 68),
         decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primary
-              : Colors.white,
+          color: selected ? AppColors.primary : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected
-                ? AppColors.primary
-                : const Color(0xFFD9DEEA),
+            color: selected ? AppColors.primary : const Color(0xFFD9DEEA),
             width: 1.2,
           ),
           boxShadow: selected
@@ -92,19 +88,14 @@ class StationFuelOption extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(14),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.local_gas_station_outlined,
                     size: 22,
-                    color: selected
-                        ? Colors.white
-                        : AppColors.primary,
+                    color: selected ? Colors.white : AppColors.primary,
                   ),
                   const SizedBox(height: 5),
                   Text(
@@ -112,13 +103,9 @@ class StationFuelOption extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: selected
-                          ? Colors.white
-                          : AppColors.onSurface,
+                      color: selected ? Colors.white : AppColors.onSurface,
                       fontSize: 13,
-                      fontWeight: selected
-                          ? FontWeight.w700
-                          : FontWeight.w600,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                     ),
                   ),
                 ],

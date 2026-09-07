@@ -5,8 +5,6 @@
 // (`compute`) para não travar a thread da UI numa foto grande; é a versão que
 // o app usa. A foto do posto é guardada como base64 num documento Firestore
 // separado (limite de 1 MiB por documento).
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
@@ -31,7 +29,14 @@ Uint8List compressToJpeg(
   int maxBytes = kStationCoverMaxBytes,
   int maxDimension = kStationCoverMaxDimension,
 }) {
-  final decoded = img.decodeImage(source);
+  final img.Image? decoded;
+  try {
+    decoded = img.decodeImage(source);
+  } on Object {
+    throw const ValidationException(
+      'Não foi possível ler a imagem. Escolha uma foto JPEG ou PNG.',
+    );
+  }
   if (decoded == null) {
     throw const ValidationException(
       'Não foi possível ler a imagem. Escolha uma foto JPEG ou PNG.',
@@ -39,7 +44,8 @@ Uint8List compressToJpeg(
   }
 
   final oriented = img.bakeOrientation(decoded);
-  final resized = (oriented.width > maxDimension || oriented.height > maxDimension)
+  var candidate =
+      (oriented.width > maxDimension || oriented.height > maxDimension)
       ? img.copyResize(
           oriented,
           width: oriented.width >= oriented.height ? maxDimension : null,
@@ -47,9 +53,29 @@ Uint8List compressToJpeg(
         )
       : oriented;
 
-  for (final quality in const [85, 75, 65, 55, 45, 35]) {
-    final encoded = img.encodeJpg(resized, quality: quality);
-    if (encoded.length <= maxBytes) return encoded;
+  const qualities = [85, 75, 65, 55, 45, 35, 25];
+  const minimumDimension = 320;
+
+  while (true) {
+    for (final quality in qualities) {
+      final encoded = img.encodeJpg(candidate, quality: quality);
+      if (encoded.length <= maxBytes) return encoded;
+    }
+
+    final longestSide = candidate.width >= candidate.height
+        ? candidate.width
+        : candidate.height;
+    if (longestSide <= minimumDimension) break;
+
+    final nextLongestSide = (longestSide * .8).round().clamp(
+      minimumDimension,
+      longestSide - 1,
+    );
+    candidate = img.copyResize(
+      candidate,
+      width: candidate.width >= candidate.height ? nextLongestSide : null,
+      height: candidate.height > candidate.width ? nextLongestSide : null,
+    );
   }
   throw const ValidationException(
     'A imagem é muito detalhada para o limite. Tente uma foto menor.',

@@ -8,6 +8,4 @@ abstract interface class StationDiscoveryRepository {
     String city, {
     bool forceRefresh = false,
   });
-
-  Future<List<String>> loadAvailableCities({bool forceRefresh = false});
 }

@@ -374,8 +374,4 @@ class StationDiscoveryViewModel extends AsyncNotifier<StationDiscoveryState> {
       return _from(await _repository.loadCity(city), previous);
     });
   }
-
-  Future<List<String>> loadAvailableCities({bool forceRefresh = false}) {
-    return _repository.loadAvailableCities(forceRefresh: forceRefresh);
-  }
 }
