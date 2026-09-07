@@ -15,6 +15,7 @@ abstract final class AppRoutes {
   static const clientRegistration = '/register/client';
   static const stationRegistrationStep1 = '/register/station/step-1';
   static const stationRegistrationStep2 = '/register/station/step-2';
+  static const stationDetails = '/station-details';
   static final routes = <String, WidgetBuilder>{
     login: (_) => const AuthGate(),
     forgotPassword: (_) => const ForgotPasswordPage(),

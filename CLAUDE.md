@@ -105,7 +105,15 @@ documentação.
   a cidade pelo GPS, consulta `public_stations` por `citySearchKey`, calcula
   distância no aparelho e ordena por menor preço com distância como desempate.
   Inclui busca, filtro por avaliação/aberto, troca sequencial por swipe, toque
-  direto no combustível, pull-to-refresh e painel inicial do posto.
+  direto no combustível e pull-to-refresh. O toque no card abre o perfil
+  público completo do posto.
+- Perfil público em `station_details/` (MVVM): capa única sob demanda, cinco
+  preços, serviços, horários expansíveis com suporte à virada da meia-noite,
+  rota externa pelo Google Maps, favorito privado e avaliações públicas. A
+  prévia exibe até três reviews em cards organizados e “Ver todas” abre uma
+  tela própria com texto integral e paginação de 20 itens. A nota agregada usa
+  cinco estrelas e permanece limitada visualmente ao intervalo de 0 a 5. Não mostra telefone,
+  pois o único telefone atual é administrativo e privado.
 - O seletor manual da home oferece somente Bebedouro durante o MVP por uma
   constante de domínio; ele não lê toda a coleção de postos para descobrir
   cidades. O schema permanece preparado para expansão dentro de SP.
@@ -139,13 +147,14 @@ documentação.
   foto ou iniciais/ícone de fallback) são usados no painel e na listagem.
 - Estrutura de pastas da feature `admin/` reservada (vazia), aguardando
   implementação.
-- Dependências novas: `image` e `image_picker` (foto do posto).
+- Dependências novas: `image` e `image_picker` (foto do posto) e
+  `url_launcher` (rota externa do perfil público).
 
 ## Ainda não existe / próximos passos típicos
 
 - Abas **Informações** (editar `services`/`tags`), **Horários** (editar
   `openingHours`) e **Avaliações** do painel do posto — hoje placeholder.
-- Favoritos, reviews e admin.
+- Lista dedicada de favoritos, histórico completo/paginado de reviews e admin.
 
 ## Nota sobre manutenção deste arquivo
 

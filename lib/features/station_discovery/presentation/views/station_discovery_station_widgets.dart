@@ -20,10 +20,13 @@ class _StationCard extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => showModalBottomSheet<void>(
-          context: context,
-          showDragHandle: true,
-          builder: (_) => _StationPanel(station: station),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => StationDetailsPage(
+              stationUid: station.uid,
+              distanceKm: station.distanceKm,
+            ),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -186,64 +189,6 @@ class _StationCard extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StationPanel extends StatelessWidget {
-  const _StationPanel({required this.station});
-
-  final StationSummary station;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    station.name,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                ),
-
-                const SizedBox(width: 8),
-
-                StationBrandBadge(brand: station.brand),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            Text('${station.neighborhood}, ${station.city}'),
-
-            if (station.distanceKm != null) ...[
-              const SizedBox(height: 6),
-              Text('${station.distanceKm!.toStringAsFixed(1)} km de distância'),
-            ],
-
-            const SizedBox(height: 16),
-
-            Text(
-              '${station.averageRating.toStringAsFixed(1)} de avaliação'
-              ' · ${station.reviewCount} avaliações',
-            ),
-
-            const SizedBox(height: 20),
-
-            const Text(
-              'O perfil completo do posto será ampliado com serviços, '
-              'horários e avaliações.',
-            ),
-          ],
         ),
       ),
     );
