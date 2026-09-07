@@ -222,32 +222,34 @@ Future<void> _sortStations(
   final selected = await showModalBottomSheet<StationSortMode>(
     context: context,
     showDragHandle: true,
-    builder: (_) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const ListTile(
-            title: Text(
-              'Ordenar por',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-            ),
-          ),
-
-          for (final mode in StationSortMode.values)
-            RadioListTile<StationSortMode>(
-              value: mode,
-              groupValue: current,
-              title: Text(_sortLabel(mode)),
-              secondary: Icon(_sortIcon(mode)),
-              onChanged: (value) {
-                if (value != null) {
-                  Navigator.pop(context, value);
-                }
-              },
+    builder: (_) => RadioGroup<StationSortMode>(
+      groupValue: current,
+      onChanged: (value) {
+        if (value != null) {
+          Navigator.pop(context, value);
+        }
+      },
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(
+              title: Text(
+                'Ordenar por',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+              ),
             ),
 
-          const SizedBox(height: 12),
-        ],
+            for (final mode in StationSortMode.values)
+              RadioListTile<StationSortMode>(
+                value: mode,
+                title: Text(_sortLabel(mode)),
+                secondary: Icon(_sortIcon(mode)),
+              ),
+
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     ),
   );

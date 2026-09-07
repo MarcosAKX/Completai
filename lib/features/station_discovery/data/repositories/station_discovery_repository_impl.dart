@@ -18,8 +18,6 @@ class StationDiscoveryRepositoryImpl implements StationDiscoveryRepository {
 
   final Map<String, List<StationSummary>> _cache = {};
 
-  List<String>? _citiesCache;
-
   @override
   Future<StationDiscoveryResult> loadCurrentCity({
     bool forceRefresh = false,
@@ -78,26 +76,6 @@ class StationDiscoveryRepositoryImpl implements StationDiscoveryRepository {
     } catch (error) {
       throw UnexpectedFailure(
         'Não foi possível carregar os postos.',
-        cause: error,
-      );
-    }
-  }
-
-  @override
-  Future<List<String>> loadAvailableCities({bool forceRefresh = false}) async {
-    try {
-      if (!forceRefresh && _citiesCache != null) {
-        return _citiesCache!;
-      }
-
-      final cities = await _stations.fetchAvailableCities();
-
-      _citiesCache = cities;
-
-      return cities;
-    } catch (error) {
-      throw UnexpectedFailure(
-        'Não foi possível carregar as cidades disponíveis.',
         cause: error,
       );
     }

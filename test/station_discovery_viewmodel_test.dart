@@ -35,11 +35,6 @@ class FakeDiscoveryRepository implements StationDiscoveryRepository {
       stations: [_cheap, _near, _bestRated],
     );
   }
-
-  @override
-  Future<List<String>> loadAvailableCities({bool forceRefresh = false}) async {
-    return const ['Bebedouro'];
-  }
 }
 
 const _cheap = StationSummary(

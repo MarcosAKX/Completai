@@ -24,11 +24,6 @@ class _Repository implements StationDiscoveryRepository {
   }) async {
     return StationDiscoveryResult(city: city, stations: const []);
   }
-
-  @override
-  Future<List<String>> loadAvailableCities({bool forceRefresh = false}) async {
-    return const ['Bebedouro'];
-  }
 }
 
 void main() {

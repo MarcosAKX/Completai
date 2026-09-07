@@ -114,7 +114,8 @@ class _StationPricesTabState extends ConsumerState<StationPricesTab> {
           const SizedBox(height: AppSpacing.xl),
           const _SectionHeader(
             title: 'Painel de preços',
-            subtitle: 'Os clientes veem os novos valores assim que você publica.',
+            subtitle:
+                'Os clientes veem os novos valores assim que você publica.',
           ),
           const SizedBox(height: AppSpacing.md),
           for (final fuel in StationFuel.values) ...[
@@ -169,7 +170,7 @@ class _SectionHeader extends StatelessWidget {
           ],
         ),
       ),
-      if (trailing != null) trailing!,
+      ?trailing,
     ],
   );
 }

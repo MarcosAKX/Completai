@@ -30,6 +30,15 @@ service cloud.firestore {
       return !exists(/databases/$(database)/documents/users/$(uid));
     }
 
+    // Confirma o papel privado do posto no estado final da operação.
+    // getAfter mantém compatibilidade com o cadastro atômico que cria
+    // gas_stations/{uid} e public_stations/{uid} no mesmo batch.
+    function hasStationRoleAfter(uid) {
+      return getAfter(
+        /databases/$(database)/documents/gas_stations/$(uid)
+      ).data.type == 'gas_station';
+    }
+
     // ---------- users (privado) ----------
     match /users/{uid} {
       allow read: if isOwner(uid);
@@ -60,6 +69,7 @@ service cloud.firestore {
 
       // Dono do posto: pode alterar qualquer campo (preços, horários, etc.)
       allow create: if isOwner(uid)
+                    && hasStationRoleAfter(uid)
                     && request.resource.data.state == 'SP'
                     && request.resource.data.city is string
                     && request.resource.data.citySearchKey is string
@@ -71,6 +81,7 @@ service cloud.firestore {
       allow update: if
         // Caso 1: dono do posto altera qualquer campo do próprio posto.
         (isOwner(uid)
+          && hasStationRoleAfter(uid)
           && request.resource.data.state == 'SP'
           && request.resource.data.city is string
           && request.resource.data.citySearchKey is string
@@ -130,6 +141,7 @@ service cloud.firestore {
     match /station_covers/{uid} {
       allow read: if true;
       allow create, update: if isOwner(uid)
+                            && hasStationRoleAfter(uid)
                             && request.resource.data.image is string
                             && request.resource.data.image.size() > 0
                             && request.resource.data.image.size() <= 700000;

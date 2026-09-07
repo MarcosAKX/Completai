@@ -210,28 +210,7 @@ class _LocationError extends ConsumerWidget {
 
 Future<void> _chooseCity(BuildContext context, WidgetRef ref) async {
   final vm = ref.read(stationDiscoveryViewModelProvider.notifier);
-
-  List<String> cities;
-
-  try {
-    cities = await vm.loadAvailableCities();
-  } catch (_) {
-    if (!context.mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Não foi possível carregar as cidades disponíveis.'),
-      ),
-    );
-
-    return;
-  }
-
-  if (!context.mounted) {
-    return;
-  }
+  const cities = StationDiscoveryScope.availableCities;
 
   final selectedCity = await showModalBottomSheet<String>(
     context: context,
@@ -258,33 +237,22 @@ Future<void> _chooseCity(BuildContext context, WidgetRef ref) async {
 
               const SizedBox(height: 16),
 
-              if (cities.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text(
-                      'Nenhuma cidade com postos cadastrados foi encontrada.',
-                      textAlign: TextAlign.center,
-                    ),
+              ...cities.map((city) {
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.location_on_outlined),
                   ),
-                )
-              else
-                ...cities.map((city) {
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const CircleAvatar(
-                      child: Icon(Icons.location_on_outlined),
-                    ),
-                    title: Text(
-                      city,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () {
-                      Navigator.pop(sheetContext, city);
-                    },
-                  );
-                }),
+                  title: Text(
+                    city,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () {
+                    Navigator.pop(sheetContext, city);
+                  },
+                );
+              }),
             ],
           ),
         ),

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { before, beforeEach, after, test } from 'node:test';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { client, station, publicStation, stationCover, review, report } from './fixtures.mjs';
 
 let env;
@@ -31,6 +31,24 @@ test('cliente cria o próprio perfil sem papel conflitante', async () => {
 test('posto cria o próprio perfil sem papel conflitante', async () => {
   await assertSucceeds(setDoc(doc(database('station'), 'gas_stations/station'), station('station')));
 });
+test('cadastro atômico cria perfil privado e público do posto', async () => {
+  const db = database('station');
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'gas_stations/station'), station('station'));
+  batch.set(doc(db, 'public_stations/station'), publicStation('station'));
+  await assertSucceeds(batch.commit());
+});
+test('cliente não publica posto nem capa usando o próprio uid', async () => {
+  await seed(['users/alice', client('alice')]);
+  const db = database('alice');
+  await assertFails(setDoc(doc(db, 'public_stations/alice'), publicStation('alice')));
+  await assertFails(setDoc(doc(db, 'station_covers/alice'), stationCover('alice')));
+});
+test('autenticado sem perfil de posto não publica posto nem capa', async () => {
+  const db = database('ghost');
+  await assertFails(setDoc(doc(db, 'public_stations/ghost'), publicStation('ghost')));
+  await assertFails(setDoc(doc(db, 'station_covers/ghost'), stationCover('ghost')));
+});
 test('cliente existente não pode criar papel de posto', async () => {
   await seed(['users/alice', client('alice')]);
   await assertFails(setDoc(doc(database('alice'), 'gas_stations/alice'), station('alice')));
@@ -55,22 +73,25 @@ test('público anônimo lê documento e lista de postos', async () => {
   assert.equal((await assertSucceeds(getDocs(collection(db, 'public_stations')))).size, 1);
 });
 test('dono cria e edita dados públicos', async () => {
+  await seed(['gas_stations/station', station('station')]);
   const ref = doc(database('station'), 'public_stations/station');
   await assertSucceeds(setDoc(ref, publicStation('station')));
   await assertSucceeds(updateDoc(ref, { brandName: 'Nome atualizado', 'prices.ethanol': 3.5 }));
 });
 test('dono grava bandeira e serviços em public_stations sem regra extra', async () => {
-  await seed(['public_stations/station', publicStation('station')]);
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', publicStation('station')]);
   await assertSucceeds(updateDoc(doc(database('station'), 'public_stations/station'), {
     brand: 'shell', services: ['calibragem', 'conveniência'],
   }));
 });
 test('dono não cria posto público fora de SP', async () => {
+  await seed(['gas_stations/station', station('station')]);
   await assertFails(setDoc(doc(database('station'), 'public_stations/station'), {
     ...publicStation('station'), state: 'RJ',
   }));
 });
 test('dono não cria posto público sem chave normalizada de cidade', async () => {
+  await seed(['gas_stations/station', station('station')]);
   const data = publicStation('station');
   delete data.citySearchKey;
   await assertFails(setDoc(doc(database('station'), 'public_stations/station'), data));
@@ -153,6 +174,7 @@ test('qualquer um lê a foto do posto', async () => {
   }
 });
 test('dono cria e substitui a própria foto', async () => {
+  await seed(['gas_stations/station', station('station')]);
   const ref = doc(database('station'), 'station_covers/station');
   await assertSucceeds(setDoc(ref, stationCover('station')));
   await assertSucceeds(setDoc(ref, stationCover('station', 2000)));
@@ -163,9 +185,11 @@ test('não dono e anônimo não escrevem foto de posto', async () => {
   }
 });
 test('foto acima do teto de tamanho é rejeitada', async () => {
+  await seed(['gas_stations/station', station('station')]);
   await assertFails(setDoc(doc(database('station'), 'station_covers/station'), stationCover('station', 700001)));
 });
 test('foto vazia é rejeitada', async () => {
+  await seed(['gas_stations/station', station('station')]);
   await assertFails(setDoc(doc(database('station'), 'station_covers/station'), { uid: 'station', image: '' }));
 });
 test('dono remove a própria foto; terceiro não', async () => {

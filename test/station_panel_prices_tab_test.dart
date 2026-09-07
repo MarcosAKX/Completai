@@ -79,7 +79,9 @@ void main() {
   ) async {
     final container = ProviderContainer(
       overrides: [
-        stationPanelRepositoryProvider.overrideWithValue(_StubPanelRepository()),
+        stationPanelRepositoryProvider.overrideWithValue(
+          _StubPanelRepository(),
+        ),
         stationCoverRepositoryProvider.overrideWithValue(_NoCoverRepository()),
       ],
     );
@@ -97,14 +99,36 @@ void main() {
     );
     await tester.pump();
 
+    final scrollable = find.byType(Scrollable).first;
     for (final fuel in StationFuel.values) {
+      await tester.scrollUntilVisible(
+        find.text(fuel.label),
+        180,
+        scrollable: scrollable,
+      );
       expect(find.text(fuel.label), findsOneWidget);
     }
+
+    await tester.scrollUntilVisible(
+      find.text('Nenhum preço alterado'),
+      180,
+      scrollable: scrollable,
+    );
     expect(find.text('Nenhum preço alterado'), findsOneWidget);
 
+    await tester.scrollUntilVisible(
+      find.text(StationFuel.gasolineRegular.label),
+      -180,
+      scrollable: scrollable,
+    );
     await tester.enterText(find.byType(TextFormField).first, '6,29');
     await tester.pump();
 
+    await tester.scrollUntilVisible(
+      find.text('Publicar 1 preço'),
+      180,
+      scrollable: scrollable,
+    );
     expect(find.text('Publicar 1 preço'), findsOneWidget);
   });
 }

@@ -1,5 +1,4 @@
 // Serviço do painel: leitura combinada e escrita coerente nas duas coleções.
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:completai/features/station_panel/data/services/station_panel_service.dart';
 import 'package:completai/features/station_panel/domain/models/station_fuel.dart';
 import 'package:completai/shared/models/station_brand.dart';
@@ -77,10 +76,7 @@ void main() {
 
     await service.writePrices(_uid, {StationFuel.ethanol: 3.999});
 
-    final data = (await firestore
-            .collection('public_stations')
-            .doc(_uid)
-            .get())
+    final data = (await firestore.collection('public_stations').doc(_uid).get())
         .data()!;
     expect((data['prices'] as Map)['ethanol'], 3.999);
     expect((data['prices'] as Map)['gasolineRegular'], 6.29);
@@ -93,16 +89,10 @@ void main() {
 
     await service.writeIdentity(_uid, 'Novo Nome', '(17) 90000-0000');
 
-    final private = (await firestore
-            .collection('gas_stations')
-            .doc(_uid)
-            .get())
+    final private = (await firestore.collection('gas_stations').doc(_uid).get())
         .data()!;
-    final public = (await firestore
-            .collection('public_stations')
-            .doc(_uid)
-            .get())
-        .data()!;
+    final public =
+        (await firestore.collection('public_stations').doc(_uid).get()).data()!;
     expect(private['brandName'], 'Novo Nome');
     expect(private['phone'], '(17) 90000-0000');
     expect(public['brandName'], 'Novo Nome');
@@ -114,10 +104,7 @@ void main() {
 
     await service.writeAddress(_uid, 'Av. Nova, 200', 'Jardim', 'barretos');
 
-    final data = (await firestore
-            .collection('public_stations')
-            .doc(_uid)
-            .get())
+    final data = (await firestore.collection('public_stations').doc(_uid).get())
         .data()!;
     expect(data['city'], 'Barretos');
     expect(data['citySearchKey'], 'barretos');
@@ -130,10 +117,7 @@ void main() {
 
     await service.writeBrand(_uid, StationBrand.shell);
 
-    final data = (await firestore
-            .collection('public_stations')
-            .doc(_uid)
-            .get())
+    final data = (await firestore.collection('public_stations').doc(_uid).get())
         .data()!;
     expect(data['brand'], 'shell');
   });

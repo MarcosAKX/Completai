@@ -9,6 +9,7 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../station_cover/presentation/providers/station_cover_providers.dart';
 import '../../domain/models/station_summary.dart';
 import '../../domain/station_opening_hours.dart';
+import '../../domain/station_discovery_scope.dart';
 import '../providers/station_discovery_providers.dart';
 import '../viewmodels/station_discovery_viewmodel.dart';
 import '../widgets/station_fuel_selector.dart';

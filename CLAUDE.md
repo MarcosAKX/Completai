@@ -106,8 +106,15 @@ documentação.
   distância no aparelho e ordena por menor preço com distância como desempate.
   Inclui busca, filtro por avaliação/aberto, troca sequencial por swipe, toque
   direto no combustível, pull-to-refresh e painel inicial do posto.
+- O seletor manual da home oferece somente Bebedouro durante o MVP por uma
+  constante de domínio; ele não lê toda a coleção de postos para descobrir
+  cidades. O schema permanece preparado para expansão dentro de SP.
 - O cadastro do posto persiste `city` canônica e `citySearchKey` derivadas da
   geocodificação. As rules exigem os campos em escritas do dono.
+- Escritas do dono em `public_stations/{uid}` e `station_covers/{uid}` também
+  exigem `gas_stations/{uid}` com papel de posto. A checagem usa `getAfter()`
+  para preservar o batch atômico do cadastro e bloquear clientes/contas sem
+  perfil. Os 47 testes das rules passam no Emulator.
 - Painel administrativo do dono do posto em `station_panel/` (MVVM). Substitui
   o antigo `HomePlaceholder`. Bottom nav de 4 abas: **Preços** (edita os 5
   combustíveis, publicação por diff), **Informações/Horários/Avaliações**
@@ -119,6 +126,8 @@ documentação.
   pela listagem do motorista): documento `station_covers/{uid}` com JPEG
   base64 comprimido no client (`core/utils/jpeg_compressor.dart`, pacote
   `image`), carregado sob demanda via `stationCoverProvider(uid)`.
+  O compressor converte falhas de decodificação em `ValidationException` e
+  reduz progressivamente qualidade e dimensões até respeitar o teto.
 - `AddressGeocodingService` movido de `auth/` para `lib/shared/services/`
   (usado no cadastro e na edição de endereço). `StationBrand` em
   `lib/shared/models/`. Mapeador comum de erro de infra em
@@ -134,10 +143,6 @@ documentação.
 
 ## Ainda não existe / próximos passos típicos
 
-- **Rodar os testes do Emulator antes do próximo push que toque
-  `firestore.rules`** — esta tarefa adicionou o bloco `station_covers` e
-  casos de teste novos em `tests/firestore-rules/`; ainda não foram
-  executados no Emulator nesta máquina.
 - Abas **Informações** (editar `services`/`tags`), **Horários** (editar
   `openingHours`) e **Avaliações** do painel do posto — hoje placeholder.
 - Favoritos, reviews e admin.

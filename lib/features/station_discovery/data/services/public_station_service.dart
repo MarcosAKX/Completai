@@ -19,22 +19,6 @@ class PublicStationService {
     return snapshot.docs.map(_map).toList(growable: false);
   }
 
-  Future<List<String>> fetchAvailableCities() async {
-    final snapshot = await _firestore.collection('public_stations').get();
-
-    final cities =
-        snapshot.docs
-            .map((doc) => doc.data()['city'])
-            .whereType<String>()
-            .map((city) => city.trim())
-            .where((city) => city.isNotEmpty)
-            .toSet()
-            .toList()
-          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-
-    return cities;
-  }
-
   StationSummary _map(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data();
 

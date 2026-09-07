@@ -9,16 +9,15 @@ import '../../domain/repositories/station_panel_repository.dart';
 import '../services/station_panel_service.dart';
 
 class StationPanelRepositoryImpl implements StationPanelRepository {
-  StationPanelRepositoryImpl(this._service, {required String? Function() uid})
-    : _uid = uid;
+  StationPanelRepositoryImpl(this._service, {required this.uidProvider});
 
   final StationPanelService _service;
-  final String? Function() _uid;
+  final String? Function() uidProvider;
 
   StationProfile? _cache;
 
   String _requireUid() =>
-      _uid() ?? (throw const UnauthenticatedException());
+      uidProvider() ?? (throw const UnauthenticatedException());
 
   @override
   Future<StationProfile> loadProfile({bool forceRefresh = false}) async {

@@ -7,7 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 Future<void> _pump(WidgetTester tester, String name) => tester.pumpWidget(
   MaterialApp(
     theme: AppTheme.light,
-    home: Scaffold(body: Center(child: StationLogo(stationName: name))),
+    home: Scaffold(
+      body: Center(child: StationLogo(stationName: name)),
+    ),
   ),
 );
 
@@ -33,7 +35,7 @@ void main() {
     await _pump(tester, 'Posto Central');
     expect(
       tester.getSemantics(find.byType(StationLogo)),
-      containsSemantics(label: 'Logo de Posto Central', isImage: true),
+      isSemantics(label: 'Logo de Posto Central', isImage: true),
     );
     handle.dispose();
   });
