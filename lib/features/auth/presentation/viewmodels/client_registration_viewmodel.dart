@@ -24,10 +24,12 @@ class ClientRegistrationViewModel extends AsyncNotifier<bool> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await _repository.createAccount(email: email, password: password);
-      await _repository.completeClientRegistration(
-        name: name,
-        phone: phone,
-      );
+      try {
+        await _repository.completeClientRegistration(name: name, phone: phone);
+      } catch (error, stack) {
+        await _repository.discardIncompleteAccount();
+        Error.throwWithStackTrace(error, stack);
+      }
       await ref.read(_sessionProvider).signOut();
       return true;
     });

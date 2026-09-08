@@ -17,6 +17,12 @@ abstract interface class AuthRepository {
   Future<AuthSession> completeStationRegistration(
     StationRegistration registration,
   );
+
+  /// Desfaz a conta criada nesta sessão de cadastro se a etapa de perfil
+  /// falhou — evita credencial órfã (que depois dá "e-mail já existe").
+  /// Só apaga a conta se ela foi criada agora, nunca uma reaproveitada.
+  Future<void> discardIncompleteAccount();
+
   Future<void> sendPasswordResetEmail(String email);
   Future<void> signOut();
 }

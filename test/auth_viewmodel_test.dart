@@ -16,10 +16,12 @@ class TestAuthRepository implements AuthRepository {
   AuthSession? session;
   Completer<AuthSession>? pendingLogin;
   Object? clientProfileFailure;
+  Object? stationProfileFailure;
   int accountCreations = 0;
   int clientProfileAttempts = 0;
   int passwordResetRequests = 0;
   int stationProfileAttempts = 0;
+  int discardCalls = 0;
 
   @override
   Future<AuthSession?> restoreSession({bool forceRefresh = false}) async =>
@@ -61,11 +63,19 @@ class TestAuthRepository implements AuthRepository {
     StationRegistration registration,
   ) async {
     stationProfileAttempts++;
+    final failure = stationProfileFailure;
+    if (failure != null) throw failure;
     return session = AuthSession(
       uid: session!.uid,
       email: session!.email,
       role: AccountRole.gasStation,
     );
+  }
+
+  @override
+  Future<void> discardIncompleteAccount() async {
+    discardCalls++;
+    session = null;
   }
 
   @override
@@ -228,6 +238,40 @@ void main() {
       expect(container.read(sessionProvider).requireValue, isNull);
     },
   );
+
+  test('cadastro de posto que falha no perfil descarta a conta órfã', () async {
+    final registrationProvider =
+        AsyncNotifierProvider<StationRegistrationViewModel, bool>(
+          () => StationRegistrationViewModel(
+            repositoryProvider,
+            sessionProvider.notifier,
+          ),
+        );
+    await container.read(registrationProvider.future);
+    await container.read(sessionProvider.future);
+    repository.stationProfileFailure = const ValidationFailure(
+      'Endereço não encontrado.',
+    );
+
+    await container
+        .read(registrationProvider.notifier)
+        .register(
+          email: 'posto@teste.com',
+          password: 'secret',
+          registration: const StationRegistration(
+            cnpj: '12345678000190',
+            brandName: 'Posto Teste',
+            phone: '17999999999',
+            address: 'Endereço ruim',
+            neighborhood: 'Centro',
+            city: 'Bebedouro',
+          ),
+        );
+
+    expect(container.read(registrationProvider).hasError, isTrue);
+    expect(repository.discardCalls, 1);
+    expect(container.read(sessionProvider).requireValue, isNull);
+  });
 
   test('recuperação de senha mantém estado isolado da sessão', () async {
     final resetProvider = AsyncNotifierProvider<PasswordResetViewModel, bool>(

@@ -54,6 +54,12 @@ class FirebaseAuthService {
   Future<void> sendPasswordResetEmail(String email) =>
       _auth.sendPasswordResetEmail(email: email.trim());
 
+  /// Apaga a conta logada. Usado para não deixar credencial órfã quando a
+  /// gravação do perfil falha logo após a criação da conta.
+  Future<void> deleteCurrentAccount() async {
+    await _auth.currentUser?.delete();
+  }
+
   Future<void> signOut() async {
     // Encerra Firebase mesmo se o provedor Google apresentar falha.
     try {

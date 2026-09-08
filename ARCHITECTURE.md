@@ -14,7 +14,9 @@
 - **Backend:** Firebase — **plano Spark (gratuito)**, sem Cloud Functions
   - Firestore (ver `SCHEMA-FIRESTORE.md`)
   - Firebase Auth + Google Sign-In
-- **Geolocalização:** `geocoding` (1x no cadastro) + `geolocator` (cálculo de
+- **Geolocalização:** `geocoding` (1x no cadastro, com fallback HTTP Nominatim
+  quando o plugin nativo não existe/falha — ver
+  `shared/services/address_geocoding_service.dart`) + `geolocator` (cálculo de
   distância no client, em tempo de renderização)
 - **Arquitetura:** MVVM + Repository Pattern, feature-first — **sem exceção,
   desde a primeira tela** (o projeto anterior falhou em manter isso

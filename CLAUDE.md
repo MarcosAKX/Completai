@@ -138,8 +138,16 @@ documentação.
   O compressor converte falhas de decodificação em `ValidationException` e
   reduz progressivamente qualidade e dimensões até respeitar o teto.
 - `AddressGeocodingService` movido de `auth/` para `lib/shared/services/`
-  (usado no cadastro e na edição de endereço). `StationBrand` em
-  `lib/shared/models/`. Mapeador comum de erro de infra em
+  (usado no cadastro e na edição de endereço). Tenta o plugin nativo
+  `geocoding` (Android/iOS) e, se ele não existe (web/desktop) ou falha
+  (Geocoder do emulador), cai num **fallback HTTP Nominatim** (OpenStreetMap,
+  sem chave). A validação de SP é a mesma nos dois caminhos. Dep: `http`.
+- Cadastro (cliente e posto) desfaz a conta Auth recém-criada se a gravação
+  do perfil falha (`AuthRepository.discardIncompleteAccount`) — antes sobrava
+  credencial órfã que travava o retry com "e-mail já existe". `_guard` do
+  `AuthRepositoryImpl` loga a causa real via `dart:developer` antes de
+  traduzir para `Failure` (a UI só vê a mensagem tratada).
+- `StationBrand` em `lib/shared/models/`. Mapeador comum de erro de infra em
   `core/errors/failure_mapper.dart` (`guardInfra` com timeout).
 - `core/theme/`, `core/errors/`, `core/widgets/` já estabelecidos como padrão;
   O seletor de combustível usa opções amplas com ícones, contraste de seleção
