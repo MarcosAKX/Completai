@@ -21,7 +21,9 @@ class StationReviewCard extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: AppSpacing.sm),
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: AppColors.screenBackground,
+      color: preview
+          ? AppColors.stationPriceSurface
+          : AppColors.screenBackground,
       borderRadius: BorderRadius.circular(14),
       border: Border.all(color: AppColors.outline),
     ),

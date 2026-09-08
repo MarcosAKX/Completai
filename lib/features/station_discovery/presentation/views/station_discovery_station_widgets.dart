@@ -17,6 +17,14 @@ class _StationCard extends ConsumerWidget {
         ?.bytes;
 
     return Card(
+      color: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 3,
+      shadowColor: AppColors.primary.withValues(alpha: 0.16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.stationCardBorder),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -119,7 +127,7 @@ class _StationCard extends ConsumerWidget {
                 ],
               ),
 
-              const Divider(height: 24),
+              const Divider(height: 24, color: AppColors.outline),
 
               //
               // Preços dos combustíveis.
@@ -134,7 +142,7 @@ class _StationCard extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: item == fuel
                                 ? AppColors.primaryLight
-                                : AppColors.screenBackground,
+                                : AppColors.stationPriceSurface,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Column(
