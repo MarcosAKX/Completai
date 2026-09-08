@@ -8,6 +8,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../providers/station_panel_providers.dart';
 import '../widgets/station_panel_placeholder_tab.dart';
+import 'station_hours_tab.dart';
+import 'station_info_tab.dart';
 import 'station_prices_tab.dart';
 import 'station_profile_page.dart';
 
@@ -65,16 +67,8 @@ class _StationPanelPageState extends ConsumerState<StationPanelPage> {
           index: _tab,
           children: const [
             StationPricesTab(),
-            StationPanelPlaceholderTab(
-              icon: Icons.storefront_outlined,
-              title: 'Informações',
-              message: 'Serviços e comodidades do posto chegam em breve.',
-            ),
-            StationPanelPlaceholderTab(
-              icon: Icons.schedule_outlined,
-              title: 'Horários',
-              message: 'A edição dos horários de funcionamento chegam em breve.',
-            ),
+            StationInfoTab(),
+            StationHoursTab(),
             StationPanelPlaceholderTab(
               icon: Icons.reviews_outlined,
               title: 'Avaliações',

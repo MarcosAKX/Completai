@@ -6,8 +6,9 @@ import 'package:riverpod/riverpod.dart';
 
 import '../../../station_cover/domain/repositories/station_cover_repository.dart';
 import '../../../station_cover/presentation/providers/station_cover_providers.dart';
-import '../../domain/models/cover_edit.dart';
 import '../../../../shared/models/station_brand.dart';
+import '../../domain/models/cover_edit.dart';
+import '../../domain/models/opening_hours.dart';
 import '../../domain/models/station_fuel.dart';
 import '../../domain/models/station_profile.dart';
 import '../../domain/repositories/station_panel_repository.dart';
@@ -76,6 +77,14 @@ class StationPanelViewModel extends AsyncNotifier<StationProfile> {
     if (brand == current.brand) return current;
     return _repository.saveBrand(brand);
   });
+
+  Future<bool> saveInfo({
+    required List<String> services,
+    required List<String> tags,
+  }) => _run(() => _repository.saveInfo(services: services, tags: tags));
+
+  Future<bool> saveOpeningHours(WeeklyHours hours) =>
+      _run(() => _repository.saveOpeningHours(hours));
 
   Future<bool> _run(Future<StationProfile> Function() action) async {
     if (state.isLoading) return false;

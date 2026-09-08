@@ -1,6 +1,7 @@
 // Contrato do painel do posto: carrega o perfil combinado e persiste cada
 // bloco editável. A implementação cuida de batch, geocodificação e cache.
 import '../../../../shared/models/station_brand.dart';
+import '../models/opening_hours.dart';
 import '../models/station_fuel.dart';
 import '../models/station_profile.dart';
 
@@ -28,4 +29,13 @@ abstract interface class StationPanelRepository {
 
   /// Bandeira exibida ao cliente.
   Future<StationProfile> saveBrand(StationBrand brand);
+
+  /// Serviços e marcadores do posto (aba Informações). Limite de 20 cada.
+  Future<StationProfile> saveInfo({
+    required List<String> services,
+    required List<String> tags,
+  });
+
+  /// Horário de funcionamento por dia (aba Horários).
+  Future<StationProfile> saveOpeningHours(WeeklyHours hours);
 }

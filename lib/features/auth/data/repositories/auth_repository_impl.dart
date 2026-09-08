@@ -1,5 +1,7 @@
 // Orquestra serviços e mantém o único cache de perfil,
 // restrito ao UID da sessão.
+import 'dart:developer' as developer;
+
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../core/errors/exceptions.dart';
@@ -18,12 +20,25 @@ class AuthRepositoryImpl implements AuthRepository {
 
   AuthSession? _cachedSession;
 
+  // uid da conta criada nesta passagem de cadastro (não reaproveitada).
+  // Serve para `discardIncompleteAccount` só apagar o que ela mesma criou.
+  String? _accountCreatedThisFlow;
+
   Future<T> _guard<T>(Future<T> Function() operation) async {
     try {
       return await operation();
     } catch (error, stack) {
       _cachedSession = null;
-      Error.throwWithStackTrace(mapAuthFailure(error), stack);
+      final failure = mapAuthFailure(error);
+      // Loga a causa real — a UI só mostra a mensagem tratada. Aparece no
+      // console do `flutter run` e no DevTools.
+      developer.log(
+        'operação de auth falhou',
+        name: 'auth',
+        error: error,
+        stackTrace: stack,
+      );
+      Error.throwWithStackTrace(failure, stack);
     }
   }
 
@@ -104,6 +119,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
     if (existing != null &&
         existing.email?.trim().toLowerCase() == email.trim().toLowerCase()) {
+      _accountCreatedThisFlow = null;
       return _session(existing, forceRefresh: true);
     }
 
@@ -114,6 +130,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     final user = await _auth.createAccount(email: email, password: password);
+    _accountCreatedThisFlow = user.uid;
 
     return _session(user);
   });
@@ -136,6 +153,7 @@ class AuthRepositoryImpl implements AuthRepository {
       phone: phone,
     );
 
+    _accountCreatedThisFlow = null;
     // Atualiza a sessão para incluir imediatamente o nome criado.
     return _session(user, forceRefresh: true);
   });
@@ -152,7 +170,18 @@ class AuthRepositoryImpl implements AuthRepository {
       registration: registration,
     );
 
+    _accountCreatedThisFlow = null;
     return _session(user, forceRefresh: true);
+  });
+
+  @override
+  Future<void> discardIncompleteAccount() => _guard(() async {
+    final user = _auth.currentUser;
+    if (user != null && user.uid == _accountCreatedThisFlow) {
+      await _auth.deleteCurrentAccount();
+    }
+    _accountCreatedThisFlow = null;
+    _cachedSession = null;
   });
 
   @override

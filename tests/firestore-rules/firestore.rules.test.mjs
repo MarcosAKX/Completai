@@ -84,6 +84,18 @@ test('dono grava bandeira e serviços em public_stations sem regra extra', async
     brand: 'shell', services: ['calibragem', 'conveniência'],
   }));
 });
+test('dono grava horários de funcionamento', async () => {
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', publicStation('station')]);
+  await assertSucceeds(updateDoc(doc(database('station'), 'public_stations/station'), {
+    openingHours: { monday: { open: '08:00', close: '18:00' }, tuesday: null, wednesday: null, thursday: null, friday: null, saturday: null, sunday: null },
+  }));
+});
+test('dono não passa de 20 serviços ou marcadores', async () => {
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', publicStation('station')]);
+  const ref = doc(database('station'), 'public_stations/station');
+  await assertFails(updateDoc(ref, { services: Array.from({ length: 21 }, (_, i) => `s${i}`) }));
+  await assertFails(updateDoc(ref, { tags: Array.from({ length: 21 }, (_, i) => `t${i}`) }));
+});
 test('dono não cria posto público fora de SP', async () => {
   await seed(['gas_stations/station', station('station')]);
   await assertFails(setDoc(doc(database('station'), 'public_stations/station'), {

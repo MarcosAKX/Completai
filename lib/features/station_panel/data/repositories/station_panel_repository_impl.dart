@@ -3,6 +3,7 @@
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failure_mapper.dart';
 import '../../../../shared/models/station_brand.dart';
+import '../../domain/models/opening_hours.dart';
 import '../../domain/models/station_fuel.dart';
 import '../../domain/models/station_profile.dart';
 import '../../domain/repositories/station_panel_repository.dart';
@@ -66,6 +67,23 @@ class StationPanelRepositoryImpl implements StationPanelRepository {
   Future<StationProfile> saveBrand(StationBrand brand) async {
     final uid = _requireUid();
     await guardInfra(() => _service.writeBrand(uid, brand));
+    return _reload();
+  }
+
+  @override
+  Future<StationProfile> saveInfo({
+    required List<String> services,
+    required List<String> tags,
+  }) async {
+    final uid = _requireUid();
+    await guardInfra(() => _service.writeInfo(uid, services, tags));
+    return _reload();
+  }
+
+  @override
+  Future<StationProfile> saveOpeningHours(WeeklyHours hours) async {
+    final uid = _requireUid();
+    await guardInfra(() => _service.writeOpeningHours(uid, hours));
     return _reload();
   }
 }

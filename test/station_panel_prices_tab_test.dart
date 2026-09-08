@@ -5,6 +5,7 @@ import 'package:completai/core/theme/app_theme.dart';
 import 'package:completai/features/station_cover/domain/models/station_cover.dart';
 import 'package:completai/features/station_cover/domain/repositories/station_cover_repository.dart';
 import 'package:completai/features/station_cover/presentation/providers/station_cover_providers.dart';
+import 'package:completai/features/station_panel/domain/models/opening_hours.dart';
 import 'package:completai/features/station_panel/domain/models/station_fuel.dart';
 import 'package:completai/features/station_panel/domain/models/station_profile.dart';
 import 'package:completai/features/station_panel/domain/repositories/station_panel_repository.dart';
@@ -30,8 +31,9 @@ class _StubPanelRepository implements StationPanelRepository {
     city: 'Bebedouro',
     state: 'SP',
     prices: {for (final fuel in StationFuel.values) fuel: null},
-    serviceCount: 0,
-    openingHoursInformed: false,
+    services: const [],
+    tags: const [],
+    openingHours: const WeeklyHours.empty(),
   );
 
   @override
@@ -59,6 +61,15 @@ class _StubPanelRepository implements StationPanelRepository {
 
   @override
   Future<StationProfile> saveBrand(StationBrand brand) async => _profile;
+
+  @override
+  Future<StationProfile> saveInfo({
+    required List<String> services,
+    required List<String> tags,
+  }) async => _profile;
+
+  @override
+  Future<StationProfile> saveOpeningHours(WeeklyHours hours) async => _profile;
 }
 
 class _NoCoverRepository implements StationCoverRepository {

@@ -6,8 +6,10 @@ import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../shared/services/address_geocoding_service.dart';
 import '../../../../shared/models/station_brand.dart';
+import '../../domain/models/opening_hours.dart';
 import '../../domain/models/station_fuel.dart';
 import '../../domain/models/station_profile.dart';
+import '../../domain/station_service_options.dart';
 
 class StationPanelService {
   StationPanelService(this._firestore, this._geocoding);
@@ -34,8 +36,6 @@ class StationPanelService {
     }
 
     final prices = (public['prices'] as Map<String, dynamic>?) ?? const {};
-    final services = (public['services'] as List<dynamic>?) ?? const [];
-    final hours = (public['openingHours'] as Map<String, dynamic>?) ?? const {};
     double? price(String key) {
       final value = prices[key];
       return value is num ? value.toDouble() : null;
@@ -43,6 +43,10 @@ class StationPanelService {
 
     String str(Object? value, [String fallback = '']) =>
         value is String && value.isNotEmpty ? value : fallback;
+
+    List<String> strList(Object? value) => (value is List)
+        ? value.whereType<String>().where((s) => s.isNotEmpty).toList()
+        : const [];
 
     return StationProfile(
       uid: uid,
@@ -58,8 +62,9 @@ class StationPanelService {
       prices: {
         for (final fuel in StationFuel.values) fuel: price(fuel.wireKey),
       },
-      serviceCount: services.length,
-      openingHoursInformed: hours.values.any((day) => day != null),
+      services: strList(public['services']),
+      tags: strList(public['tags']),
+      openingHours: WeeklyHours.fromWire(public['openingHours']),
     );
   }
 
@@ -114,5 +119,23 @@ class StationPanelService {
 
   Future<void> writeBrand(String uid, StationBrand brand) {
     return _public(uid).update({'brand': brand.wireValue});
+  }
+
+  Future<void> writeInfo(
+    String uid,
+    List<String> services,
+    List<String> tags,
+  ) {
+    if (services.length > kMaxStationServices ||
+        tags.length > kMaxStationTags) {
+      throw const ValidationException(
+        'Máximo de 20 serviços e 20 marcadores.',
+      );
+    }
+    return _public(uid).update({'services': services, 'tags': tags});
+  }
+
+  Future<void> writeOpeningHours(String uid, WeeklyHours hours) {
+    return _public(uid).update({'openingHours': hours.toWire()});
   }
 }

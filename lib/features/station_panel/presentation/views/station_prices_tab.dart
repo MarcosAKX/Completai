@@ -2,14 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/money.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../domain/models/station_fuel.dart';
 import '../providers/station_panel_providers.dart';
 import '../widgets/station_client_preview_card.dart';
+import '../widgets/station_panel_section_header.dart';
 import '../widgets/station_price_field.dart';
 import 'station_display_edit_page.dart';
 
@@ -96,7 +95,7 @@ class _StationPricesTabState extends ConsumerState<StationPricesTab> {
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          _SectionHeader(
+          StationPanelSectionHeader(
             title: 'Prévia para clientes',
             subtitle: 'Mostra como o posto aparece na busca por combustível.',
             trailing: IconButton(
@@ -112,7 +111,7 @@ class _StationPricesTabState extends ConsumerState<StationPricesTab> {
           const SizedBox(height: AppSpacing.sm),
           StationClientPreviewCard(profile: profile),
           const SizedBox(height: AppSpacing.xl),
-          const _SectionHeader(
+          const StationPanelSectionHeader(
             title: 'Painel de preços',
             subtitle:
                 'Os clientes veem os novos valores assim que você publica.',
@@ -138,39 +137,4 @@ class _StationPricesTabState extends ConsumerState<StationPricesTab> {
       ),
     );
   }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    required this.subtitle,
-    this.trailing,
-  });
-
-  final String title;
-  final String subtitle;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: AppTextStyles.title.copyWith(fontSize: 18)),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              subtitle,
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-      ?trailing,
-    ],
-  );
 }
