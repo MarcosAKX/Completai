@@ -6,6 +6,7 @@ import 'package:completai/features/station_cover/domain/models/station_cover.dar
 import 'package:completai/features/station_cover/domain/repositories/station_cover_repository.dart';
 import 'package:completai/features/station_cover/presentation/providers/station_cover_providers.dart';
 import 'package:completai/features/station_panel/domain/models/cover_edit.dart';
+import 'package:completai/features/station_panel/domain/models/opening_hours.dart';
 import 'package:completai/features/station_panel/domain/models/station_fuel.dart';
 import 'package:completai/features/station_panel/domain/models/station_profile.dart';
 import 'package:completai/features/station_panel/domain/repositories/station_panel_repository.dart';
@@ -29,8 +30,9 @@ StationProfile _profile({
   city: 'Bebedouro',
   state: 'SP',
   prices: prices ?? {for (final fuel in StationFuel.values) fuel: null},
-  serviceCount: 0,
-  openingHoursInformed: false,
+  services: const [],
+  tags: const [],
+  openingHours: const WeeklyHours.empty(),
 );
 
 class FakePanelRepository implements StationPanelRepository {
@@ -41,6 +43,8 @@ class FakePanelRepository implements StationPanelRepository {
   StationBrand? savedBrand;
   ({String address, String neighborhood, String city})? savedAddress;
   ({String name, String phone})? savedIdentity;
+  ({List<String> services, List<String> tags})? savedInfo;
+  WeeklyHours? savedHours;
 
   @override
   Future<StationProfile> loadProfile({bool forceRefresh = false}) async =>
@@ -85,6 +89,23 @@ class FakePanelRepository implements StationPanelRepository {
     if (failWith != null) throw failWith!;
     savedBrand = brand;
     return _profile = _profile.copyWith(brand: brand);
+  }
+
+  @override
+  Future<StationProfile> saveInfo({
+    required List<String> services,
+    required List<String> tags,
+  }) async {
+    if (failWith != null) throw failWith!;
+    savedInfo = (services: services, tags: tags);
+    return _profile = _profile.copyWith(services: services, tags: tags);
+  }
+
+  @override
+  Future<StationProfile> saveOpeningHours(WeeklyHours hours) async {
+    if (failWith != null) throw failWith!;
+    savedHours = hours;
+    return _profile = _profile.copyWith(openingHours: hours);
   }
 }
 
@@ -211,5 +232,36 @@ void main() {
         );
 
     expect(panel.savedAddress?.city, 'Barretos');
+  });
+
+  test('salvar informações encaminha serviços e marcadores', () async {
+    final panel = FakePanelRepository(_profile());
+    final container = _container(panel, FakeCoverRepository());
+    await container.read(stationPanelViewModelProvider.future);
+
+    final ok = await container
+        .read(stationPanelViewModelProvider.notifier)
+        .saveInfo(services: ['Conveniência', 'GNV'], tags: ['24 horas']);
+
+    expect(ok, isTrue);
+    expect(panel.savedInfo?.services, ['Conveniência', 'GNV']);
+    expect(panel.savedInfo?.tags, ['24 horas']);
+  });
+
+  test('salvar horários encaminha a semana ao repositório', () async {
+    final panel = FakePanelRepository(_profile());
+    final container = _container(panel, FakeCoverRepository());
+    await container.read(stationPanelViewModelProvider.future);
+
+    final hours = const WeeklyHours.empty().withDay(
+      Weekday.monday,
+      const DayHours(open: '08:00', close: '18:00'),
+    );
+    final ok = await container
+        .read(stationPanelViewModelProvider.notifier)
+        .saveOpeningHours(hours);
+
+    expect(ok, isTrue);
+    expect(panel.savedHours, hours);
   });
 }

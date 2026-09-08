@@ -242,11 +242,15 @@ assim como `public_stations`, impedindo que um motorista publique uma capa
 usando o próprio uid.
 
 O painel edita `public_stations` por `update` parcial (preços via
-`prices.<chave>` + `pricesUpdatedAt`; bandeira via `brand`) e o nome/telefone
-por **batch** em `gas_stations` + `public_stations` (o nome vive nas duas).
-Editar o endereço re-executa a geocodificação (`AddressGeocodingService`,
-agora em `lib/shared/services/`) e regrava cidade canônica, `citySearchKey`,
-`state` e coordenadas — mesma validação SP do cadastro.
+`prices.<chave>` + `pricesUpdatedAt`; bandeira via `brand`; aba Informações
+grava `services` + `tags` juntos; aba Horários grava `openingHours` inteiro
+com as 7 chaves) e o nome/telefone por **batch** em `gas_stations` +
+`public_stations` (o nome vive nas duas). Editar o endereço re-executa a
+geocodificação (`AddressGeocodingService`, agora em `lib/shared/services/`) e
+regrava cidade canônica, `citySearchKey`, `state` e coordenadas — mesma
+validação SP do cadastro. **Nenhuma dessas edições exigiu mudança de rules** —
+o limite de 20 em `services`/`tags` já existia e é o client que impede passar
+disso antes de escrever.
 
 ## Consistência (batches e transações)
 

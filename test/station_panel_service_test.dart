@@ -1,5 +1,7 @@
 // Serviço do painel: leitura combinada e escrita coerente nas duas coleções.
+import 'package:completai/core/errors/exceptions.dart';
 import 'package:completai/features/station_panel/data/services/station_panel_service.dart';
+import 'package:completai/features/station_panel/domain/models/opening_hours.dart';
 import 'package:completai/features/station_panel/domain/models/station_fuel.dart';
 import 'package:completai/shared/models/station_brand.dart';
 import 'package:completai/shared/services/address_geocoding_service.dart';
@@ -120,5 +122,64 @@ void main() {
     final data = (await firestore.collection('public_stations').doc(_uid).get())
         .data()!;
     expect(data['brand'], 'shell');
+  });
+
+  test('lê serviços, marcadores e horários', () async {
+    final firestore = await _seeded();
+    await firestore.collection('public_stations').doc(_uid).update({
+      'tags': ['24 horas'],
+      'openingHours': {
+        'monday': {'open': '08:00', 'close': '18:00'},
+      },
+    });
+    final profile = await StationPanelService(firestore, _geocoding()).read(_uid);
+
+    expect(profile.services, ['calibragem', 'conveniência']);
+    expect(profile.tags, ['24 horas']);
+    expect(profile.openingHours.isOpen(Weekday.monday), isTrue);
+    expect(profile.openingHours.forDay(Weekday.monday)!.close, '18:00');
+  });
+
+  test('writeInfo grava serviços e marcadores em public_stations', () async {
+    final firestore = await _seeded();
+    final service = StationPanelService(firestore, _geocoding());
+
+    await service.writeInfo(_uid, ['Conveniência', 'GNV'], ['rodovia']);
+
+    final data = (await firestore.collection('public_stations').doc(_uid).get())
+        .data()!;
+    expect(data['services'], ['Conveniência', 'GNV']);
+    expect(data['tags'], ['rodovia']);
+  });
+
+  test('writeInfo rejeita mais de 20 serviços antes de escrever', () async {
+    final service = StationPanelService(await _seeded(), _geocoding());
+    expect(
+      () => service.writeInfo(
+        _uid,
+        List.generate(21, (i) => 'servico $i'),
+        const [],
+      ),
+      throwsA(isA<ValidationException>()),
+    );
+  });
+
+  test('writeOpeningHours grava as 7 chaves', () async {
+    final firestore = await _seeded();
+    final service = StationPanelService(firestore, _geocoding());
+
+    await service.writeOpeningHours(
+      _uid,
+      const WeeklyHours.empty().withDay(
+        Weekday.friday,
+        const DayHours(open: '06:00', close: '22:00'),
+      ),
+    );
+
+    final hours = (await firestore.collection('public_stations').doc(_uid).get())
+        .data()!['openingHours'] as Map;
+    expect(hours.keys.length, 7);
+    expect(hours['friday'], {'open': '06:00', 'close': '22:00'});
+    expect(hours['monday'], isNull);
   });
 }

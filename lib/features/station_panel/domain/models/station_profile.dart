@@ -1,6 +1,7 @@
 // Perfil do posto visto e editado pelo dono, unindo dados privados
 // (`gas_stations/{uid}`) e públicos (`public_stations/{uid}`) num só objeto.
 import '../../../../shared/models/station_brand.dart';
+import 'opening_hours.dart';
 import 'station_fuel.dart';
 
 class StationProfile {
@@ -16,8 +17,9 @@ class StationProfile {
     required this.city,
     required this.state,
     required this.prices,
-    required this.serviceCount,
-    required this.openingHoursInformed,
+    required this.services,
+    required this.tags,
+    required this.openingHours,
   });
 
   final String uid;
@@ -44,16 +46,20 @@ class StationProfile {
   /// Preço por litro de cada combustível; `null` = não informado.
   final Map<StationFuel, double?> prices;
 
-  /// Quantidade de serviços/comodidades cadastrados (a edição da lista em si
-  /// virá na aba "Informações").
-  final int serviceCount;
+  /// Serviços/comodidades exibidos ao cliente.
+  final List<String> services;
 
-  /// Se ao menos um dia tem horário definido (a edição virá na aba
-  /// "Horários"). Enquanto `false`, a prévia mostra "horário não informado".
-  final bool openingHoursInformed;
+  /// Marcadores livres do posto.
+  final List<String> tags;
+
+  final WeeklyHours openingHours;
 
   int get informedFuelCount =>
       prices.values.where((price) => price != null).length;
+
+  int get serviceCount => services.length;
+
+  bool get openingHoursInformed => openingHours.anyInformed;
 
   double? priceFor(StationFuel fuel) => prices[fuel];
 
@@ -66,6 +72,9 @@ class StationProfile {
     String? city,
     String? state,
     Map<StationFuel, double?>? prices,
+    List<String>? services,
+    List<String>? tags,
+    WeeklyHours? openingHours,
   }) => StationProfile(
     uid: uid,
     name: name ?? this.name,
@@ -78,7 +87,8 @@ class StationProfile {
     city: city ?? this.city,
     state: state ?? this.state,
     prices: prices ?? this.prices,
-    serviceCount: serviceCount,
-    openingHoursInformed: openingHoursInformed,
+    services: services ?? this.services,
+    tags: tags ?? this.tags,
+    openingHours: openingHours ?? this.openingHours,
   );
 }

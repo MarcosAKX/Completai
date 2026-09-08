@@ -125,11 +125,12 @@ documentação.
   perfil. Os 47 testes das rules passam no Emulator.
 - Painel administrativo do dono do posto em `station_panel/` (MVVM). Substitui
   o antigo `HomePlaceholder`. Bottom nav de 4 abas: **Preços** (edita os 5
-  combustíveis, publicação por diff), **Informações/Horários/Avaliações**
-  (placeholder). Card "Prévia para clientes" espelha o card da listagem;
-  "Editar exibição" ajusta **bandeira** (`public_stations.brand`) e **foto**.
-  Tela de **Perfil** edita nome, celular e endereço (re-geocodifica, valida
-  SP); CNPJ só exibe; botão Sair.
+  combustíveis, publicação por diff), **Informações** (edita `services` via
+  chips + `tags` livres, teto 20), **Horários** (edita `openingHours` por dia,
+  "copiar p/ todos"), **Avaliações** (placeholder). Card "Prévia para
+  clientes" espelha o card da listagem; "Editar exibição" ajusta **bandeira**
+  (`public_stations.brand`) e **foto**. Tela de **Perfil** edita nome, celular
+  e endereço (re-geocodifica, valida SP); CNPJ só exibe; botão Sair.
 - Foto do posto em `station_cover/` (feature própria, consumida pelo painel e
   pela listagem do motorista): documento `station_covers/{uid}` com JPEG
   base64 comprimido no client (`core/utils/jpeg_compressor.dart`, pacote
@@ -152,9 +153,14 @@ documentação.
 
 ## Ainda não existe / próximos passos típicos
 
-- Abas **Informações** (editar `services`/`tags`), **Horários** (editar
-  `openingHours`) e **Avaliações** do painel do posto — hoje placeholder.
-- Lista dedicada de favoritos, histórico completo/paginado de reviews e admin.
+- Aba **Avaliações** do painel do posto — hoje placeholder (as abas
+  Informações e Horários já foram implementadas).
+- **Deploy de rules NÃO é automático** — não existe `.github/workflows/`.
+  Depois de mergear mudança em `firestore.rules`, rodar
+  `firebase deploy --only firestore:rules --project tcc-completai` na mão
+  (o texto sobre GitHub Actions na seção "Fluxo de trabalho" está
+  desatualizado — corrigir).
+- Lista dedicada de favoritos e admin.
 
 ## Nota sobre manutenção deste arquivo
 
