@@ -8,6 +8,7 @@
 // HTTP do Nominatim (OpenStreetMap, grátis, sem chave). A validação de SP e a
 // extração de cidade são as mesmas nos dois caminhos.
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
@@ -72,12 +73,11 @@ class AddressGeocodingService {
   }
 
   Future<_RawGeocode?> _tryNative(String address) async {
-    final geocoding = (_nativeLocations == null || _nativePlacemarks == null)
-        ? Geocoding()
-        : null;
-    final findLocations = _nativeLocations ?? geocoding!.locationFromAddress;
-    final findPlacemarks = _nativePlacemarks ?? geocoding!.placemarkFromAddress;
     try {
+      final geocoding = _nativeLocations == null ? Geocoding() : null;
+      final findLocations = _nativeLocations ?? geocoding!.locationFromAddress;
+      final findPlacemarks =
+          _nativePlacemarks ?? geocoding!.placemarkFromAddress;
       final results = await Future.wait([
         findLocations(address),
         findPlacemarks(address),
@@ -91,9 +91,17 @@ class AddressGeocodingService {
       final city = (place.locality ?? place.subAdministrativeArea ?? '').trim();
       if (state.isEmpty || city.isEmpty) return null;
       return _RawGeocode(location.latitude, location.longitude, state, city);
-    } on Exception {
-      // Plugin indisponível (web/desktop) ou Geocoder do Android falhou.
-      // Não engolimos o erro — só trocamos de estratégia para o HTTP.
+    } catch (error, stack) {
+      // Plataforma sem implementação nativa (na web o `Geocoding()` lança
+      // `TypeError` porque `GeocodingPlatformFactory.instance` é null — e
+      // isso é `Error`, não `Exception`), ou o Geocoder do Android falhou.
+      // Não engolimos: registramos e trocamos para o fallback HTTP.
+      developer.log(
+        'geocoding nativo indisponível — usando fallback HTTP',
+        name: 'geocoding',
+        error: error,
+        stackTrace: stack,
+      );
       return null;
     }
   }
@@ -130,8 +138,14 @@ class AddressGeocodingService {
               .trim();
       if (state.isEmpty || city.isEmpty) return (null, true);
       return (_RawGeocode(lat, lon, state, city), false);
-    } on Exception {
-      // Rede/CORS/timeout — não é "endereço inexistente".
+    } catch (error, stack) {
+      // Rede/CORS/timeout/resposta inesperada — não é "endereço inexistente".
+      developer.log(
+        'fallback HTTP de geocoding falhou',
+        name: 'geocoding',
+        error: error,
+        stackTrace: stack,
+      );
       return (null, true);
     }
   }
