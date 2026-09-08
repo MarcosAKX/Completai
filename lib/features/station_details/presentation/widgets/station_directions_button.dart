@@ -11,20 +11,47 @@ class StationDirectionsButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox(
     width: double.infinity,
-    child: FilledButton.icon(
+    child: FilledButton(
       onPressed: onPressed,
-      icon: const Icon(Icons.navigation_rounded),
-      label: const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Column(
-          children: [
-            Text('Como chegar'),
-            Text(
-              'Abrir no Google Maps',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-            ),
-          ],
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.controlRadius),
         ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.directions_rounded, size: AppSpacing.xl),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Como chegar',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: onPressed == null
+                        ? Theme.of(context).disabledColor
+                        : Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Abrir no Google Maps',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: onPressed == null
+                        ? Theme.of(context).disabledColor
+                        : Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          const Icon(Icons.open_in_new_rounded, size: AppSpacing.md),
+        ],
       ),
     ),
   );

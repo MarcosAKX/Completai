@@ -13,39 +13,43 @@ class _QuickActions extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: _QuickActionCard(
-              icon: Icons.tune_rounded,
-              title: 'Filtros',
-              subtitle: 'Refine sua busca',
-              badgeCount: state?.activeFilterCount ?? 0,
-              onTap: state == null ? null : () => _filters(context, ref, state),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: _QuickActionCard(
+                icon: Icons.tune_rounded,
+                title: 'Filtros',
+                subtitle: 'Refine sua busca',
+                badgeCount: state?.activeFilterCount ?? 0,
+                onTap: state == null
+                    ? null
+                    : () => _filters(context, ref, state),
+              ),
             ),
-          ),
 
-          const SizedBox(width: 10),
+            const SizedBox(width: 10),
 
-          const Expanded(
-            child: _QuickActionCard(
-              icon: Icons.receipt_long_outlined,
-              title: 'Meus abastecimentos',
-              subtitle: 'Acompanhe seu histórico',
+            const Expanded(
+              child: _QuickActionCard(
+                icon: Icons.receipt_long_outlined,
+                title: 'Meus abastecimentos',
+                subtitle: 'Acompanhe seu histórico',
+              ),
             ),
-          ),
 
-          const SizedBox(width: 10),
+            const SizedBox(width: 10),
 
-          const Expanded(
-            child: _QuickActionCard(
-              icon: Icons.star_border_rounded,
-              title: 'Postos favoritos',
-              subtitle: 'Seus postos salvos',
+            const Expanded(
+              child: _QuickActionCard(
+                icon: Icons.star_border_rounded,
+                title: 'Postos favoritos',
+                subtitle: 'Seus postos salvos',
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -141,6 +145,7 @@ class _QuickActionCard extends StatelessWidget {
                 ),
               ),
 
+              const Spacer(),
               const SizedBox(height: 9),
 
               const Align(

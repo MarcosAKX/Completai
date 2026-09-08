@@ -20,6 +20,14 @@ class StationDetailsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
+    color: AppColors.surface,
+    surfaceTintColor: Colors.transparent,
+    elevation: 3,
+    shadowColor: AppColors.primary.withValues(alpha: 0.16),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: const BorderSide(color: AppColors.stationCardBorder),
+    ),
     margin: EdgeInsets.zero,
     child: Padding(
       padding: const EdgeInsets.all(AppSpacing.md),

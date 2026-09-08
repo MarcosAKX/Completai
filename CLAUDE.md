@@ -107,6 +107,9 @@ documentação.
   Inclui busca, filtro por avaliação/aberto, troca sequencial por swipe, toque
   direto no combustível e pull-to-refresh. O toque no card abre o perfil
   público completo do posto.
+- Ações rápidas da home com altura uniforme e setas no canto inferior direito.
+- Cartões de postos na home com fundo branco, borda azul suave e sombra
+  discreta; fotos, informações e organização dos combustíveis preservadas.
 - Perfil público em `station_details/` (MVVM): capa única sob demanda, cinco
   preços, serviços, horários expansíveis com suporte à virada da meia-noite,
   rota externa pelo Google Maps, favorito privado e avaliações públicas. A
@@ -114,6 +117,10 @@ documentação.
   tela própria com texto integral e paginação de 20 itens. A nota agregada usa
   cinco estrelas e permanece limitada visualmente ao intervalo de 0 a 5. Não mostra telefone,
   pois o único telefone atual é administrativo e privado.
+- Seções de preços, serviços, horários e avaliações do detalhe público com
+  o mesmo fundo branco, borda azul suave e sombra discreta dos cartões da home.
+- Botão "Como chegar" no detalhe público com título em destaque, textos
+  alinhados à esquerda, ícones de rota/link externo e cantos arredondados.
 - O seletor manual da home oferece somente Bebedouro durante o MVP por uma
   constante de domínio; ele não lê toda a coleção de postos para descobrir
   cidades. O schema permanece preparado para expansão dentro de SP.

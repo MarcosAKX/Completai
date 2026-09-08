@@ -52,6 +52,7 @@ class _PriceTile extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
+      color: AppColors.stationPriceSurface,
       border: Border.all(color: AppColors.outline),
       borderRadius: BorderRadius.circular(14),
     ),
