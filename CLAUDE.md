@@ -177,6 +177,18 @@ documentação.
   desatualizado — corrigir).
 - Lista dedicada de favoritos e admin.
 
+## Perfil do motorista
+
+- Feature `client_profile/` em MVVM, aberta pelo ícone Perfil da home
+  (rota `/profile`). Exibe iniciais, nome, e-mail somente para leitura e
+  celular em cards; a edição de nome/celular ocorre em tela separada.
+- Salvar altera somente `users/{uid}.name` e `phone`, valida os campos e
+  recarrega a sessão para atualizar a saudação da home. Erros permanecem em
+  `AsyncValue`; o formulário mantém os valores digitados para nova tentativa.
+- Redefinição de senha por e-mail e saída usam os ViewModels de autenticação
+  existentes. Sem foto do motorista, campos novos, alteração de rules ou
+  atualização automática geral ao retornar entre telas.
+
 ## Nota sobre manutenção deste arquivo
 
 Este arquivo (e `ARCHITECTURE.md`/`SCHEMA-FIRESTORE.md`) devem estar sempre

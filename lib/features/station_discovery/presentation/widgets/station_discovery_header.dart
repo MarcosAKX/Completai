@@ -94,26 +94,11 @@ class _HeaderTopBar extends StatelessWidget {
 
         const SizedBox(width: 4),
 
-        PopupMenuButton<String>(
+        IconButton(
           tooltip: 'Perfil',
-          onSelected: (value) {
-            if (value == 'logout') {
-              ref.read(sessionViewModelProvider.notifier).signOut();
-            }
-          },
-          itemBuilder: (_) => const [
-            PopupMenuItem(
-              value: 'logout',
-              child: Row(
-                children: [
-                  Icon(Icons.logout),
-                  SizedBox(width: 10),
-                  Text('Sair'),
-                ],
-              ),
-            ),
-          ],
-          child: Container(
+          onPressed: () =>
+              Navigator.of(context).pushNamed(AppRoutes.clientProfile),
+          icon: Container(
             width: 42,
             height: 42,
             decoration: BoxDecoration(

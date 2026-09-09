@@ -1,6 +1,7 @@
 // Home do motorista: GPS, busca, filtros, swipe e atualização por gesto.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../app/routes.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/station_brand_badge.dart';
