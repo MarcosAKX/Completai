@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { before, beforeEach, after, test } from 'node:test';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, runTransaction, writeBatch } from 'firebase/firestore';
+import { collection, collectionGroup, query, where, orderBy, documentId, limit, startAfter, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { client, station, publicStation, stationCover, review, report } from './fixtures.mjs';
 
 let env;
@@ -216,4 +216,29 @@ test('dados privados só podem ser lidos pelo dono, nem admin tem exceção', as
   for (const db of [database(), database('alice'), database('admin', { admin: true })]) {
     await assertFails(getDoc(doc(db, 'gas_stations/station')));
   }
+});
+
+// Histórico usa o mesmo formato de consulta da feature Flutter.
+test('histórico consulta apenas autor e pagina datas iguais sem perder itens', async () => {
+  await seed(
+    ['public_stations/a/reviews/alice', review('alice')],
+    ['public_stations/b/reviews/alice', review('alice')],
+    ['public_stations/a/reviews/bob', review('bob')],
+  );
+  const db = database('alice');
+  const base = query(collectionGroup(db, 'reviews'), where('clientUid', '==', 'alice'),
+    orderBy('createdAt', 'desc'), orderBy(documentId(), 'desc'), limit(1));
+  const first = await assertSucceeds(getDocs(base));
+  const second = await assertSucceeds(getDocs(query(base,
+    startAfter(first.docs[0].get('createdAt'), first.docs[0].ref.path))));
+  assert.equal(first.size, 1);
+  assert.equal(second.size, 1);
+  assert.notEqual(first.docs[0].ref.path, second.docs[0].ref.path);
+  assert.equal(second.docs[0].data().clientUid, 'alice');
+});
+test('histórico nega consulta anônima, sem filtro ou pelo autor de outra conta', async () => {
+  await seed(['public_stations/a/reviews/alice', review('alice')]);
+  await assertFails(getDocs(query(collectionGroup(database(), 'reviews'), where('clientUid', '==', 'alice'))));
+  await assertFails(getDocs(collectionGroup(database('alice'), 'reviews')));
+  await assertFails(getDocs(query(collectionGroup(database('bob'), 'reviews'), where('clientUid', '==', 'alice'))));
 });

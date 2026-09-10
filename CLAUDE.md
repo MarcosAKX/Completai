@@ -175,7 +175,36 @@ documentação.
   `firebase deploy --only firestore:rules --project tcc-completai` na mão
   (o texto sobre GitHub Actions na seção "Fluxo de trabalho" está
   desatualizado — corrigir).
-- Lista dedicada de favoritos e admin.
+- Painel de admin.
+
+## Histórico de avaliações
+
+- Feature `my_reviews/` em MVVM, rota `/my-reviews`; o atalho da home
+  "Meus abastecimentos" foi substituído por "Minhas avaliações".
+- Consulta por autor via grupo `reviews`, páginas de 20, ordenação por
+  data original e caminho do documento. Busca local por nome/bairro nas
+  páginas carregadas; fotos sob demanda; nota pessoal e comentário completo.
+- "Ver posto" abre o detalhe; ao retornar, recarrega o histórico preservando
+  a busca. Inclui erro, carregamento, vazio e posto indisponível.
+- Exige publicar as rules e o novo `firestore.indexes.json` antes do uso
+  no Firebase real; aguardar a conclusão da construção do índice.
+- Testes de regras no Emulator: 51 aprovados, incluindo consulta pessoal
+  autorizada, filtros obrigatórios e paginação com datas iguais.
+
+## Favoritos do motorista
+
+- Feature `favorites/` em MVVM, aberta pelo atalho "Postos favoritos" da
+  home (rota `/favorites`). Lista os registros privados em
+  `users/{uid}/favorites`, em páginas de 20, com cursor por `stationId`.
+- Busca local por nome, bairro ou cidade nos itens carregados. O contador
+  indica "carregados" enquanto existem mais páginas. Cards exibem três
+  combustíveis, nota, funcionamento e foto sob demanda; não exigem GPS.
+- Remover só retira o card após confirmação da escrita, com "Desfazer" no
+  aviso. Falhas preservam os dados. Postos excluídos são omitidos da lista.
+- Abertura do detalhe atualiza o coração; ao retornar, a lista é recarregada
+  mantendo a busca. Pull-to-refresh também disponível. Cache por conta/página
+  no Repository, descartado quando a feature deixa de ser observada.
+- Sem alteração de schema, rules ou novas dependências.
 
 ## Perfil do motorista
 

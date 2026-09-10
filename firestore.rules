@@ -39,6 +39,13 @@ service cloud.firestore {
       ).data.type == 'gas_station';
     }
 
+    // Histórico pessoal via collectionGroup: consulta limitada ao autor.
+    // Reviews de um posto continuam públicas; isto não concede escrita.
+    match /{path=**}/reviews/{reviewId} {
+      allow list: if isSignedIn()
+                  && resource.data.clientUid == request.auth.uid;
+    }
+
     // ---------- users (privado) ----------
     match /users/{uid} {
       allow read: if isOwner(uid);

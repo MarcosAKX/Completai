@@ -1,6 +1,8 @@
 // Reserva a navegação; telas e rotas de autenticação virão na próxima etapa.
 import 'package:completai/app/auth_gate.dart';
 import 'package:flutter/material.dart';
+import '../features/my_reviews/presentation/views/my_reviews_page.dart';
+import '../features/favorites/presentation/views/favorites_page.dart';
 import '../features/client_profile/presentation/views/client_profile_page.dart';
 import '../features/auth/domain/models/station_registration.dart';
 import '../features/auth/presentation/views/client_registration_page.dart';
@@ -18,9 +20,13 @@ abstract final class AppRoutes {
   static const stationRegistrationStep2 = '/register/station/step-2';
   static const stationDetails = '/station-details';
   static const clientProfile = '/profile';
+  static const favorites = '/favorites';
+  static const myReviews = '/my-reviews';
   static final routes = <String, WidgetBuilder>{
     login: (_) => const AuthGate(),
     clientProfile: (_) => const ClientProfilePage(),
+    favorites: (_) => const FavoritesPage(),
+    myReviews: (_) => const MyReviewsPage(),
     forgotPassword: (_) => const ForgotPasswordPage(),
     roleSelection: (_) => const RoleSelectionPage(),
     clientRegistration: (_) => const ClientRegistrationPage(),

@@ -252,6 +252,26 @@ validação SP do cadastro. **Nenhuma dessas edições exigiu mudança de rules*
 o limite de 20 em `services`/`tags` já existia e é o client que impede passar
 disso antes de escrever.
 
+## Histórico pessoal de avaliações
+
+A feature `my_reviews/` consulta `collectionGroup('reviews')` filtrando
+`clientUid == uid` da sessão, com `createdAt` decrescente e caminho do
+documento decrescente como desempate. Usa páginas de 20 e cursor com
+timestamp completo (segundos/nanossegundos) + caminho, evitando perder
+avaliações criadas no mesmo instante.
+
+O índice de grupo está em `firestore.indexes.json`, registrado em
+`firebase.json`. As rules permitem essa consulta filtrada ao autor por
+um match recursivo somente de `list`; não há nova permissão de escrita.
+As avaliações individuais nos postos continuam públicas.
+
+Não há coleção duplicada nem migração dos documentos atuais. O histórico
+exibe somente caminhos `public_stations/{stationUid}/reviews/{uid}`.
+Mostra a data original `createdAt` (preservada ao editar), a nota pessoal
+e o comentário; não comprova abastecimentos nem registra visitas repetidas.
+Postos excluídos são mostrados como indisponíveis, preservando a avaliação.
+Consultas ordenadas requerem `createdAt`, campo já presente no schema.
+
 ## Consistência (batches e transações)
 
 - Criar/editar posto: `gas_stations/{uid}` e `public_stations/{uid}` são

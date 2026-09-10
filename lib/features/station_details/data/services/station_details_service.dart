@@ -35,6 +35,18 @@ class StationDetailsService {
     return _mapStation(snapshot.id, data);
   }
 
+  /// Lê somente os documentos públicos de uma página de favoritos.
+  /// Documentos removidos são omitidos, sem consultar reviews nem imagens.
+  Future<List<StationDetails>> readExistingStations(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final snapshot = await _firestore
+        .collection('public_stations')
+        .where(FieldPath.documentId, whereIn: ids)
+        .limit(20)
+        .get();
+    return snapshot.docs.map((doc) => _mapStation(doc.id, doc.data())).toList();
+  }
+
   Future<List<StationReview>> readReviews(
     String stationUid, {
     int limit = 2,

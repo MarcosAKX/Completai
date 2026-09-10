@@ -87,7 +87,7 @@ void main() {
 
     expect(find.text('Filtros'), findsOneWidget);
 
-    expect(find.text('Meus abastecimentos'), findsOneWidget);
+    expect(find.text('Minhas avaliações'), findsOneWidget);
 
     expect(find.text('Postos favoritos'), findsOneWidget);
 
