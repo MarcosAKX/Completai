@@ -99,6 +99,21 @@ Não se altera `firestore.rules` para fazer a suíte passar. Se um caso falhar,
 investigue dados/expectativa, caminho e erro do Emulator; reporte divergências
 de autorização antes de propor alterações nas regras.
 
+## Publicação necessária para "Minhas avaliações"
+
+Após executar os testes do Emulator com `npm test` na pasta
+`tests/firestore-rules`, publique da raiz do projeto:
+
+```powershell
+firebase deploy --only "firestore:rules,firestore:indexes" --project tcc-completai
+```
+
+Aguarde o índice do grupo `reviews` ficar pronto no Firebase Console antes
+de validar a tela com dados reais. O Emulator verifica as regras, mas não
+comprova a disponibilidade/construção do índice em produção.
+O histórico exige o filtro `clientUid` e ordena por `createdAt` e caminho
+do documento; dados novos e existentes com esses campos são consultados.
+
 ## Estado de Git
 
 Não havia repositório Git nem AGENTS.md no projeto/ancestrais verificados.

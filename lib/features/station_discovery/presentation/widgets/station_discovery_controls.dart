@@ -31,21 +31,25 @@ class _QuickActions extends ConsumerWidget {
 
             const SizedBox(width: 10),
 
-            const Expanded(
+            Expanded(
               child: _QuickActionCard(
-                icon: Icons.receipt_long_outlined,
-                title: 'Meus abastecimentos',
-                subtitle: 'Acompanhe seu histórico',
+                icon: Icons.rate_review_outlined,
+                title: 'Minhas avaliações',
+                subtitle: 'Os postos que você avaliou',
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.myReviews),
               ),
             ),
 
             const SizedBox(width: 10),
 
-            const Expanded(
+            Expanded(
               child: _QuickActionCard(
                 icon: Icons.star_border_rounded,
                 title: 'Postos favoritos',
                 subtitle: 'Seus postos salvos',
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.favorites),
               ),
             ),
           ],
