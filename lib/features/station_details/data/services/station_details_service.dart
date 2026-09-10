@@ -63,12 +63,13 @@ class StationDetailsService {
         .collection('public_stations')
         .doc(stationUid)
         .collection('reviews')
-        .orderBy('createdAt', descending: true);
+        .orderBy('createdAt', descending: true)
+        .orderBy(FieldPath.documentId, descending: true);
     if (after != null) {
-      query = query.where(
-        'createdAt',
-        isLessThan: Timestamp.fromDate(after.createdAt),
-      );
+      query = query.startAfter([
+        Timestamp(after.seconds, after.nanoseconds),
+        after.documentId,
+      ]);
     }
     final snapshot = await query.limit(limit + 1).get();
     final visible = snapshot.docs.take(limit).toList(growable: false);
@@ -78,7 +79,11 @@ class StationDetailsService {
       reviews: visible.map(_mapReview).toList(growable: false),
       nextCursor: last == null || lastDate == null
           ? null
-          : StationReviewCursor(createdAt: lastDate.toDate()),
+          : StationReviewCursor(
+              seconds: lastDate.seconds,
+              nanoseconds: lastDate.nanoseconds,
+              documentId: last.id,
+            ),
       hasMore: snapshot.docs.length > limit,
     );
   }

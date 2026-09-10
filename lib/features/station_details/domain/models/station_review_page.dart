@@ -2,9 +2,16 @@
 import 'station_review.dart';
 
 class StationReviewCursor {
-  const StationReviewCursor({required this.createdAt});
+  const StationReviewCursor({
+    required this.seconds,
+    required this.nanoseconds,
+    required this.documentId,
+  });
 
-  final DateTime createdAt;
+  // Preserva a precisão do Firestore sem acoplar o domínio ao SDK.
+  final int seconds;
+  final int nanoseconds;
+  final String documentId;
 }
 
 class StationReviewPage {

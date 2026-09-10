@@ -18,6 +18,11 @@
   quando o plugin nativo não existe/falha — ver
   `shared/services/address_geocoding_service.dart`) + `geolocator` (cálculo de
   distância no client, em tempo de renderização)
+- Cidade atual da Home: GPS via `geolocator`, geocodificação nativa e
+  alternativa HTTP client-side BigDataCloud em `station_discovery/data/services/`.
+  Web usa a alternativa diretamente, sem chave; apenas coordenadas atuais
+  autorizadas do próprio aparelho, nunca endereços de postos. Cache da cidade
+  e compartilhamento de consultas simultâneas pertencem ao Repository.
 - **Arquitetura:** MVVM + Repository Pattern, feature-first — **sem exceção,
   desde a primeira tela** (o projeto anterior falhou em manter isso
   consistente; aqui é regra travada desde o início)

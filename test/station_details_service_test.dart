@@ -78,6 +78,43 @@ Future<FakeFirebaseFirestore> _seeded() async {
 }
 
 void main() {
+  for (final nanoseconds in [0, 123456789]) {
+    test(
+      'cursor preserva timestamp completo e documento ($nanoseconds ns)',
+      () async {
+        final firestore = FakeFirebaseFirestore();
+        final reviews = firestore
+            .collection('public_stations')
+            .doc(_stationUid)
+            .collection('reviews');
+        for (var index = 0; index < 21; index++) {
+          final uid = 'client-${index.toString().padLeft(2, '0')}';
+          await reviews.doc(uid).set({
+            'clientUid': uid,
+            'rating': 5,
+            'createdAt': Timestamp(1700000000, nanoseconds),
+          });
+        }
+        final service = StationDetailsService(firestore);
+        final first = await service.readReviewPage(_stationUid);
+        expect(first.reviews, hasLength(20));
+        expect(first.hasMore, isTrue);
+        expect(first.nextCursor!.seconds, 1700000000);
+        expect(first.nextCursor!.nanoseconds, nanoseconds);
+        expect(first.nextCursor!.documentId, first.reviews.last.clientUid);
+        expect(
+          first.reviews.map((review) => review.clientUid),
+          orderedEquals(
+            List.generate(
+              20,
+              (index) => 'client-${(20 - index).toString().padLeft(2, '0')}',
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   test('mapeia os cinco preços, serviços e horários públicos', () async {
     final service = StationDetailsService(await _seeded());
 
@@ -100,23 +137,15 @@ void main() {
     expect(reviews.single.clientName, 'Ana');
   });
 
-  test('pagina avaliações com cursor temporal', () async {
+  // O fake não implementa startAfter com FieldPath.documentId.
+  // A continuação real é exercitada no Firebase Emulator (tests/firestore-rules).
+  test('primeira página informa continuação e cursor', () async {
     final service = StationDetailsService(await _seeded());
 
     final first = await service.readReviewPage(_stationUid, limit: 2);
-    final second = await service.readReviewPage(
-      _stationUid,
-      limit: 2,
-      after: first.nextCursor,
-    );
 
     expect(first.reviews, hasLength(2));
     expect(first.hasMore, isTrue);
-    expect(second.reviews, hasLength(2));
-    expect(
-      second.reviews.map((review) => review.clientUid),
-      isNot(contains(first.reviews.first.clientUid)),
-    );
     expect(first.nextCursor, isA<StationReviewCursor>());
   });
 

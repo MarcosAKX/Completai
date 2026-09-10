@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/models/station_hours_status.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../station_cover/presentation/providers/station_cover_providers.dart';
 import '../providers/station_details_providers.dart';

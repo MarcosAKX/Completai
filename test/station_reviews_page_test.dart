@@ -34,7 +34,11 @@ class _Repository implements StationDetailsRepository {
         ),
       ],
       nextCursor: page == 1
-          ? StationReviewCursor(createdAt: DateTime(2026, 9, 1))
+          ? const StationReviewCursor(
+              seconds: 1700000000,
+              nanoseconds: 0,
+              documentId: 'client-1',
+            )
           : null,
       hasMore: page == 1,
     );

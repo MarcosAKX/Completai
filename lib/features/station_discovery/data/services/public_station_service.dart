@@ -2,6 +2,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../shared/models/station_brand.dart';
+import '../../../../shared/models/station_hours_status.dart';
+import '../../../../shared/models/station_opening_period.dart';
 import '../../domain/models/station_summary.dart';
 
 class PublicStationService {
@@ -26,19 +28,6 @@ class PublicStationService {
 
     final hours = data['openingHours'] as Map<String, dynamic>? ?? const {};
 
-    const weekdays = [
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-      'sunday',
-    ];
-
-    final today =
-        hours[weekdays[DateTime.now().weekday - 1]] as Map<String, dynamic>?;
-
     double? number(Object? value) {
       return value is num ? value.toDouble() : null;
     }
@@ -59,12 +48,17 @@ class PublicStationService {
       averageRating: number(data['averageRating']) ?? 0,
       reviewCount: data['reviewCount'] is int ? data['reviewCount'] as int : 0,
       pricesUpdatedAt: (data['pricesUpdatedAt'] as Timestamp?)?.toDate(),
-      todayHours: today == null
-          ? null
-          : DailyHours(
-              open: today['open'] as String? ?? '',
-              close: today['close'] as String? ?? '',
-            ),
+      openingHours: Map.unmodifiable({
+        for (final day in stationWeekdayKeys) day: _period(hours[day]),
+      }),
     );
+  }
+
+  StationOpeningPeriod? _period(Object? value) {
+    if (value is! Map<String, dynamic>) return null;
+    final open = value['open'];
+    final close = value['close'];
+    if (open is! String || close is! String) return null;
+    return StationOpeningPeriod(open: open, close: close);
   }
 }

@@ -43,7 +43,7 @@ class _FakeStationRepositoryWithStation implements StationDiscoveryRepository {
     averageRating: 4.7,
     reviewCount: 128,
     pricesUpdatedAt: null,
-    todayHours: null,
+    openingHours: {},
     distanceKm: 1.8,
   );
 

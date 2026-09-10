@@ -1,13 +1,8 @@
 // Modelo público completo de um posto, sem qualquer dado administrativo.
 import '../../../../shared/models/station_brand.dart';
 import '../../../../shared/models/station_fuel.dart';
-
-class StationOpeningPeriod {
-  const StationOpeningPeriod({required this.open, required this.close});
-
-  final String open;
-  final String close;
-}
+import '../../../../shared/models/station_opening_period.dart';
+export '../../../../shared/models/station_opening_period.dart';
 
 class StationDetails {
   const StationDetails({
