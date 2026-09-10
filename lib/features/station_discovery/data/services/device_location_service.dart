@@ -1,8 +1,8 @@
 // Obtém a posição e deriva a cidade confiável pelo GPS/geocodificação.
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/utils/city_search_key.dart';
+import 'city_geocoding_service.dart';
 
 class DetectedLocation {
   const DetectedLocation(
@@ -18,33 +18,41 @@ class DetectedLocation {
 }
 
 class DeviceLocationService {
-  Future<DetectedLocation> detect() async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
+  DeviceLocationService(this._geocoding, {GeolocatorPlatform? locator})
+    : _locator = locator ?? GeolocatorPlatform.instance;
+
+  final CityGeocodingService _geocoding;
+  final GeolocatorPlatform _locator;
+
+  Future<Position> currentPosition() => _position().timeout(
+    const Duration(seconds: 20),
+    onTimeout: () => throw const LocationUnavailableException(),
+  );
+
+  Future<Position> _position() async {
+    if (!await _locator.isLocationServiceEnabled()) {
       throw const LocationUnavailableException();
     }
-    var permission = await Geolocator.checkPermission();
+    var permission = await _locator.checkPermission();
     if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+      permission = await _locator.requestPermission();
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
       throw const LocationPermissionException();
     }
-    final position = await Geolocator.getCurrentPosition();
-    final marks = await Geocoding().placemarkFromCoordinates(
+    return _locator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        timeLimit: Duration(seconds: 15),
+      ),
+    );
+  }
+
+  Future<DetectedLocation> resolve(Position position) async {
+    final city = (await _geocoding.resolve(
       position.latitude,
       position.longitude,
-    );
-    if (marks.isEmpty) throw const LocationUnavailableException();
-    final mark = marks.first;
-    final state = (mark.administrativeArea ?? '').trim().toUpperCase();
-    if (state != 'SP' && state != 'SÃO PAULO' && state != 'SAO PAULO') {
-      throw const ValidationException(
-        'No momento, o CompletAI atende apenas o estado de São Paulo.',
-      );
-    }
-    final city = (mark.locality ?? mark.subAdministrativeArea ?? '').trim();
-    if (city.isEmpty) throw const LocationUnavailableException();
+    )).city;
     return DetectedLocation(
       city,
       citySearchKey(city),

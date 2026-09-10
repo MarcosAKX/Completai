@@ -93,6 +93,17 @@ documentação.
 
 ## O que já existe (não recriar)
 
+- Localização automática da Home compatível com Web: `CityGeocodingService`
+  tenta geocodificação nativa nas plataformas compatíveis e usa BigDataCloud
+  client-side como alternativa HTTP (no Chrome, diretamente). Só consulta
+  coordenadas atuais obtidas com permissão, valida Brasil/SP e não trata bairro
+  como cidade. Sem chave ou nova dependência; GPS/HTTP com timeout, escolha
+  manual preservada. Repository compartilha chamadas simultâneas e guarda a
+  cidade por 5 minutos apenas para coordenadas exatamente iguais; posição é
+  obtida novamente ao atualizar. HTTP Client fechado pelo Provider.
+  O provedor externo recebe coordenadas/IP; ver política e teste manual em
+  `docs/TESTING.md`. Não é usado para geocodificar endereços de postos.
+
 - Feature `auth/` completa em `data/domain/presentation`, com ViewModels
   separados de sessão, login, cadastro e recuperação (`AsyncNotifier`),
   `AuthRepository`/`AuthRepositoryImpl` e serviços de autenticação, perfil e
@@ -107,6 +118,15 @@ documentação.
   Inclui busca, filtro por avaliação/aberto, troca sequencial por swipe, toque
   direto no combustível e pull-to-refresh. O toque no card abre o perfil
   público completo do posto.
+- Atualização da home respeita a origem da cidade: seleção manual recarrega
+  a cidade escolhida sem consultar GPS; modo automático detecta novamente a
+  localização. Filtros, combustível e ordenação são preservados, inclusive
+  para nova tentativa após falha de atualização.
+- Funcionamento da Home, detalhe e favoritos usa cálculo Dart compartilhado
+  em `shared/models/station_hours_status.dart`. A Home preserva os horários
+  semanais já recebidos na consulta e considera o expediente do dia anterior,
+  inclusive domingo para segunda, tanto no card quanto no filtro Só abertos.
+  Abertura igual ao fechamento representa 24 horas no dia configurado.
 - Ações rápidas da home com altura uniforme e setas no canto inferior direito.
 - Cartões de postos na home com fundo branco, borda azul suave e sombra
   discreta; fotos, informações e organização dos combustíveis preservadas.
@@ -114,7 +134,12 @@ documentação.
   preços, serviços, horários expansíveis com suporte à virada da meia-noite,
   rota externa pelo Google Maps, favorito privado e avaliações públicas. A
   prévia exibe até três reviews em cards organizados e “Ver todas” abre uma
-  tela própria com texto integral e paginação de 20 itens. A nota agregada usa
+  tela própria com texto integral e paginação de 20 itens. A consulta usa
+  cursor com timestamp completo (segundos/nanossegundos) e identificador do
+  documento na paginação pública, sem pular avaliações com datas iguais.
+  Cards da prévia e de “Ver todas” mostram a data original da avaliação
+  abaixo do autor, no formato dd/mm/aaaa; ausência usa “Data não informada”.
+  A nota agregada usa
   cinco estrelas e permanece limitada visualmente ao intervalo de 0 a 5. Não mostra telefone,
   pois o único telefone atual é administrativo e privado.
 - Seções de preços, serviços, horários e avaliações do detalhe público com

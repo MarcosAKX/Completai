@@ -5,6 +5,7 @@ import { before, beforeEach, after, test } from 'node:test';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { collection, collectionGroup, query, where, orderBy, documentId, limit, startAfter, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { client, station, publicStation, stationCover, review, report } from './fixtures.mjs';
+import { Timestamp } from 'firebase/firestore';
 
 let env;
 const database = (uid, claims = {}) => uid ? env.authenticatedContext(uid, claims).firestore() : env.unauthenticatedContext().firestore();
@@ -24,6 +25,29 @@ before(async () => {
 });
 beforeEach(async () => { await env.clearFirestore(); });
 after(async () => { await env?.cleanup(); });
+
+test('reviews públicas paginam datas iguais sem perder nem repetir documentos', async () => {
+  const date = new Timestamp(1700000000, 123456789);
+  await seed(...Array.from({ length: 21 }, (_, index) => {
+    const uid = `client-${String(index).padStart(2, '0')}`;
+    return [`public_stations/station/reviews/${uid}`, { ...review(uid), createdAt: date }];
+  }), ['public_stations/station/reviews/older', { ...review('older'), createdAt: new Timestamp(1699999999, 0) }]);
+  const db = database(); // Leitura pública, inclusive sem login.
+  const base = query(collection(db, 'public_stations/station/reviews'), orderBy('createdAt', 'desc'), orderBy(documentId(), 'desc'));
+  const first = await assertSucceeds(getDocs(query(base, limit(21))));
+  const visible = first.docs.slice(0, 20);
+  const last = visible.at(-1);
+  // Não depende de reler o documento que originou o cursor.
+  await env.withSecurityRulesDisabled(context => deleteDoc(doc(context.firestore(), last.ref.path)));
+  const savedDate = last.get('createdAt');
+  const second = await assertSucceeds(getDocs(query(base,
+    startAfter(new Timestamp(savedDate.seconds, savedDate.nanoseconds), last.id), limit(21))));
+  const ids = [...visible, ...second.docs].map(item => item.id);
+  assert.equal(first.size, 21);
+  assert.equal(second.size, 2);
+  assert.equal(new Set(ids).size, 22);
+  assert.deepEqual(ids, [...Array.from({ length: 21 }, (_, i) => `client-${String(20-i).padStart(2, '0')}`), 'older']);
+});
 
 test('cliente cria o próprio perfil sem papel conflitante', async () => {
   await assertSucceeds(setDoc(doc(database('alice'), 'users/alice'), client('alice')));

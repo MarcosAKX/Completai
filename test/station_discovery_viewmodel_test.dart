@@ -7,6 +7,7 @@ import 'package:completai/features/station_discovery/presentation/viewmodels/sta
 import 'package:completai/shared/models/station_brand.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:completai/shared/models/station_opening_period.dart';
 
 class FakeDiscoveryRepository implements StationDiscoveryRepository {
   int refreshes = 0;
@@ -49,7 +50,7 @@ const _cheap = StationSummary(
   averageRating: 4,
   reviewCount: 2,
   pricesUpdatedAt: null,
-  todayHours: DailyHours(open: '00:00', close: '23:59'),
+  openingHours: {'monday': StationOpeningPeriod(open: '00:00', close: '23:59')},
   distanceKm: 3,
 );
 
@@ -65,7 +66,7 @@ const _near = StationSummary(
   averageRating: 4.5,
   reviewCount: 3,
   pricesUpdatedAt: null,
-  todayHours: null,
+  openingHours: {},
   distanceKm: 1,
 );
 
@@ -85,7 +86,7 @@ const _bestRated = StationSummary(
   averageRating: 5,
   reviewCount: 20,
   pricesUpdatedAt: null,
-  todayHours: null,
+  openingHours: {},
   distanceKm: 5,
 );
 

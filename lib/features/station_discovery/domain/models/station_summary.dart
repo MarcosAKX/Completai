@@ -1,13 +1,8 @@
 // Dados públicos necessários para listar e comparar postos.
 import '../../../../shared/models/station_brand.dart';
+import '../../../../shared/models/station_opening_period.dart';
 
 enum FuelType { gasoline, ethanol, diesel }
-
-class DailyHours {
-  const DailyHours({required this.open, required this.close});
-  final String open;
-  final String close;
-}
 
 class StationSummary {
   const StationSummary({
@@ -22,7 +17,7 @@ class StationSummary {
     required this.averageRating,
     required this.reviewCount,
     required this.pricesUpdatedAt,
-    required this.todayHours,
+    required this.openingHours,
     this.distanceKm,
   });
   final String uid;
@@ -36,7 +31,7 @@ class StationSummary {
   final double averageRating;
   final int reviewCount;
   final DateTime? pricesUpdatedAt;
-  final DailyHours? todayHours;
+  final Map<String, StationOpeningPeriod?> openingHours;
   final double? distanceKm;
 
   double? priceFor(FuelType fuel) => prices[fuel];
@@ -52,7 +47,7 @@ class StationSummary {
     averageRating: averageRating,
     reviewCount: reviewCount,
     pricesUpdatedAt: pricesUpdatedAt,
-    todayHours: todayHours,
+    openingHours: openingHours,
     distanceKm: value,
   );
 }

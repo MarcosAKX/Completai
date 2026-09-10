@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/models/station_hours_status.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../domain/models/station_details.dart';
 import 'station_details_section.dart';
@@ -98,46 +99,6 @@ const _keys = [
   'sunday',
 ];
 const _labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-
-({bool isOpen, String label}) stationHoursStatus(
-  DateTime now,
-  Map<String, StationOpeningPeriod?> hours,
-) {
-  final todayIndex = now.weekday - 1;
-  final today = hours[_keys[todayIndex]];
-  final previous = hours[_keys[(todayIndex + 6) % 7]];
-  final current = now.hour * 60 + now.minute;
-
-  int? minutes(String value) {
-    final parts = value.split(':');
-    if (parts.length != 2) return null;
-    final hour = int.tryParse(parts[0]);
-    final minute = int.tryParse(parts[1]);
-    if (hour == null || minute == null) return null;
-    return hour * 60 + minute;
-  }
-
-  if (previous != null) {
-    final open = minutes(previous.open);
-    final close = minutes(previous.close);
-    if (open != null && close != null && open > close && current < close) {
-      return (isOpen: true, label: 'Aberto agora até ${previous.close}');
-    }
-  }
-  if (today == null) return (isOpen: false, label: 'Fechado hoje');
-  final open = minutes(today.open);
-  final close = minutes(today.close);
-  if (open == null || close == null) {
-    return (isOpen: false, label: 'Horário não informado');
-  }
-  final isOpen =
-      open == close ||
-      (open < close ? current >= open && current < close : current >= open);
-  return (
-    isOpen: isOpen,
-    label: isOpen ? 'Aberto agora até ${today.close}' : 'Fechado agora',
-  );
-}
 
 String _period(StationOpeningPeriod? value) =>
     value == null ? 'Fechado' : '${value.open} – ${value.close}';

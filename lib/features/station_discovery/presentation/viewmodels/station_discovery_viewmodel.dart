@@ -94,7 +94,7 @@ class StationDiscoveryState {
       //
       // Somente postos abertos.
       //
-      if (onlyOpen && !isStationOpen(now, station.todayHours)) {
+      if (onlyOpen && !isStationOpen(now, station.openingHours)) {
         return false;
       }
 
@@ -214,12 +214,16 @@ class StationDiscoveryViewModel extends AsyncNotifier<StationDiscoveryState> {
 
   final ProviderListenable<StationDiscoveryRepository> _repositoryProvider;
 
+  // null representa a descoberta automática; texto representa escolha manual.
+  String? _manualCity;
+
   StationDiscoveryRepository get _repository {
     return ref.read(_repositoryProvider);
   }
 
   @override
   Future<StationDiscoveryState> build() async {
+    _manualCity = null;
     return _from(await _repository.loadCurrentCity());
   }
 
@@ -356,22 +360,30 @@ class StationDiscoveryViewModel extends AsyncNotifier<StationDiscoveryState> {
 
   Future<void> refresh() async {
     final previous = state.valueOrNull;
+    final manualCity = _manualCity;
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       return _from(
-        await _repository.loadCurrentCity(forceRefresh: true),
+        manualCity == null
+            ? await _repository.loadCurrentCity(forceRefresh: true)
+            : await _repository.loadCity(manualCity, forceRefresh: true),
         previous,
       );
     });
+    // Mantém as escolhas para uma nova tentativa caso a atualização falhe.
+    state = result.hasError && previous != null
+        ? result.copyWithPrevious(AsyncData(previous))
+        : result;
   }
 
   Future<void> selectCity(String city) async {
     final previous = state.valueOrNull;
+    _manualCity = city.trim();
 
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      return _from(await _repository.loadCity(city), previous);
+      return _from(await _repository.loadCity(_manualCity!), previous);
     });
   }
 }

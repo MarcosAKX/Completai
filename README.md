@@ -16,6 +16,11 @@ flutter run
 
 O login Google permanecerá sem ação visual até o OAuth Android ser configurado.
 
+Para Web, use `flutter run -d chrome` e permita localização para detectar a
+cidade. Caso negue, escolha Bebedouro manualmente. A conversão Web usa um
+serviço externo gratuito; detalhes e roteiro de validação em
+[docs/TESTING.md](docs/TESTING.md#localização-automática-no-chrome).
+
 ## Testes
 
 ```powershell

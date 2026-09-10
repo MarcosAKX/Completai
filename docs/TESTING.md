@@ -114,6 +114,39 @@ comprova a disponibilidade/construção do índice em produção.
 O histórico exige o filtro `clientUid` e ordena por `createdAt` e caminho
 do documento; dados novos e existentes com esses campos são consultados.
 
+## Paginação pública de avaliações
+
+O teste do Emulator `reviews públicas paginam datas iguais sem perder nem
+repetir documentos` cobre a consulta de “Ver todas”: data decrescente,
+identificador decrescente e `startAfter` com ambos os valores. Inclui remoção
+do documento do cursor entre páginas. A suíte atual tem 52 testes aprovados.
+
+O `fake_cloud_firestore` 4.2.0 não suporta corretamente `startAfter` com
+`FieldPath.documentId`. Por isso, a continuação é validada no Emulator; os
+testes Flutter verificam a montagem do cursor (incluindo nanossegundos),
+a primeira página e o comportamento da tela. Não há alteração de rules
+ou índices para esta correção.
+
+## Localização automática no Chrome
+
+- Rodar `flutter run -d chrome` e permitir localização ao entrar como motorista.
+  Conferir cidade, lista e distâncias. Web publicado exige HTTPS; localhost
+  pode ser usado no desenvolvimento.
+- Negar localização e conferir “Escolher cidade”; selecionar Bebedouro e
+  puxar para atualizar deve funcionar sem solicitar GPS novamente.
+- Simular rede indisponível e conferir a alternativa manual. Serviço externo
+  indisponível não deve manter carregamento indefinidamente.
+- `city_geocoding_service_test.dart` e `device_location_flow_test.dart` usam
+  GPS/HTTP simulados, sem enviar coordenadas de teste para o serviço real.
+
+BigDataCloud é a alternativa gratuita para a **posição atual do próprio
+dispositivo**, diretamente do navegador/app. Não usar para coordenadas de
+postos, em backend ou em lotes. O serviço recebe coordenadas e IP para
+aprimorar sua geolocalização. Uso sujeito à
+[política de uso](https://www.bigdatacloud.com/docs/article/fair-use-policy-for-free-client-side-reverse-geocoding-api)
+e à [explicação de privacidade do serviço](https://www.bigdatacloud.com/docs/article/why-is-reverse-geocoding-api-free).
+O cadastro de endereços continua usando a implementação anterior.
+
 ## Estado de Git
 
 Não havia repositório Git nem AGENTS.md no projeto/ancestrais verificados.

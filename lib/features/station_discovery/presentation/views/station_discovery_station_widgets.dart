@@ -9,7 +9,7 @@ class _StationCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final open = isStationOpen(DateTime.now(), station.todayHours);
+    final open = isStationOpen(DateTime.now(), station.openingHours);
 
     final coverBytes = ref
         .watch(stationCoverProvider(station.uid))

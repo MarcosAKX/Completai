@@ -17,13 +17,34 @@ class StationDiscoveryRepositoryImpl implements StationDiscoveryRepository {
   final PublicStationService _stations;
 
   final Map<String, List<StationSummary>> _cache = {};
+  DetectedLocation? _lastLocation;
+  DateTime? _locationResolvedAt;
+  Future<StationDiscoveryResult>? _pendingCurrent;
 
   @override
-  Future<StationDiscoveryResult> loadCurrentCity({
-    bool forceRefresh = false,
-  }) async {
+  Future<StationDiscoveryResult> loadCurrentCity({bool forceRefresh = false}) =>
+      _pendingCurrent ??= _loadCurrentCity(forceRefresh).whenComplete(() {
+        _pendingCurrent = null;
+      });
+
+  Future<StationDiscoveryResult> _loadCurrentCity(bool forceRefresh) async {
     try {
-      final location = await _location.detect();
+      final position = await _location.currentPosition();
+      final cached = _lastLocation;
+      // Reutiliza só a mesma coordenada exata, por até 5 minutos.
+      // Não arredonda: proximidade não garante estar no mesmo município.
+      final canReuse =
+          cached != null &&
+          cached.latitude == position.latitude &&
+          cached.longitude == position.longitude &&
+          _locationResolvedAt != null &&
+          DateTime.now().difference(_locationResolvedAt!) <
+              const Duration(minutes: 5);
+      final location = canReuse ? cached : await _location.resolve(position);
+      if (!canReuse) {
+        _lastLocation = location;
+        _locationResolvedAt = DateTime.now();
+      }
 
       final stations = await _load(location.citySearchKey, forceRefresh);
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/station_review.dart';
 
 class StationReviewCard extends StatelessWidget {
@@ -45,11 +46,23 @@ class StationReviewCard extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: Text(
-                review.clientName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    review.clientName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    _dateLabel(review.createdAt),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
             Text(
@@ -76,4 +89,12 @@ class StationReviewCard extends StatelessWidget {
 String _initial(String name) {
   final trimmed = name.trim();
   return trimmed.isEmpty ? '?' : trimmed[0].toUpperCase();
+}
+
+// Usa a data original da avaliação no horário local do aparelho.
+String _dateLabel(DateTime? value) {
+  if (value == null) return 'Data não informada';
+  final date = value.toLocal();
+  return '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/${date.year}';
 }

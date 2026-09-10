@@ -2,13 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/models/station_hours_status.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/station_logo.dart';
 import '../../../../shared/models/station_fuel.dart';
 import '../../../station_cover/presentation/providers/station_cover_providers.dart';
 import '../../../station_details/domain/models/station_details.dart';
-import '../../../station_details/presentation/widgets/station_opening_hours_section.dart';
 
 class FavoriteStationCard extends ConsumerWidget {
   const FavoriteStationCard({
