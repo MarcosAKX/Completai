@@ -93,6 +93,14 @@ documentação.
 
 ## O que já existe (não recriar)
 
+- Documentos públicos protegidos contra formatos inválidos: rules validam
+  preços, horários e tipos consumidos pelo aplicativo nas escritas do dono.
+  `shared/services/public_station_data.dart` isola documentos inválidos em
+  listas, registra o caminho e retorna falha tipada no detalhe individual.
+  Home, favoritos e histórico continuam carregando os demais postos. Não
+  corrige dados antigos; publicar rules manualmente após os testes. As
+  pendências de papéis simultâneos e manipulação de reviews continuam separadas.
+
 - Localização automática da Home compatível com Web: `CityGeocodingService`
   tenta geocodificação nativa nas plataformas compatíveis e usa BigDataCloud
   client-side como alternativa HTTP (no Chrome, diretamente). Só consulta

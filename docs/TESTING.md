@@ -147,6 +147,19 @@ aprimorar sua geolocalização. Uso sujeito à
 e à [explicação de privacidade do serviço](https://www.bigdatacloud.com/docs/article/why-is-reverse-geocoding-api-free).
 O cadastro de endereços continua usando a implementação anterior.
 
+## Documentos públicos inválidos
+
+A suíte do Emulator contém 70 testes após adicionar rejeição de preços,
+horários, coordenadas e tipos malformados, além de gravações legítimas com
+preços `null`, limites do formulário e horários noturnos/24 horas.
+`public_station_validation_test.dart` verifica isolamento na Home e na consulta
+em lote usada por favoritos/histórico; detalhe individual retorna erro tipado.
+
+Após validar, publicar manualmente:
+`firebase deploy --only firestore:rules --project tcc-completai`.
+Não há migração de registros antigos. Se uma edição for negada em documento
+antigo, conferir os campos obrigatórios do schema antes de alterar dados.
+
 ## Estado de Git
 
 Não havia repositório Git nem AGENTS.md no projeto/ancestrais verificados.

@@ -39,6 +39,55 @@ service cloud.firestore {
       ).data.type == 'gas_station';
     }
 
+    // Formato público consumido pelos clientes. Mesmo intervalo do formulário.
+    function validFuelPrice(value) {
+      return value == null || (value is number && value >= 0.01 && value <= 99.999);
+    }
+
+    function validPrices(prices) {
+      return prices is map
+        && prices.keys().hasOnly(['gasolineRegular', 'gasolineAdditive', 'ethanol', 'dieselS10', 'dieselS500'])
+        && validFuelPrice(prices.get('gasolineRegular', null))
+        && validFuelPrice(prices.get('gasolineAdditive', null))
+        && validFuelPrice(prices.get('ethanol', null))
+        && validFuelPrice(prices.get('dieselS10', null))
+        && validFuelPrice(prices.get('dieselS500', null));
+    }
+
+    function validPeriod(period) {
+      return period == null || (period is map
+        && period.keys().hasOnly(['open', 'close'])
+        && period.open is string && period.close is string
+        && period.open.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && period.close.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'));
+    }
+
+    function validHours(hours) {
+      return hours is map
+        && hours.keys().hasOnly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])
+        && validPeriod(hours.get('monday', null))
+        && validPeriod(hours.get('tuesday', null))
+        && validPeriod(hours.get('wednesday', null))
+        && validPeriod(hours.get('thursday', null))
+        && validPeriod(hours.get('friday', null))
+        && validPeriod(hours.get('saturday', null))
+        && validPeriod(hours.get('sunday', null));
+    }
+
+    function validPublicStation(data) {
+      return data.brandName is string
+        && data.address is string && data.neighborhood is string
+        && data.get('brand', '') is string
+        && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
+        && data.longitude is number && data.longitude >= -180 && data.longitude <= 180
+        && validPrices(data.prices) && validHours(data.openingHours)
+        && data.pricesUpdatedAt is timestamp
+        && data.averageRating is number && data.averageRating >= 0 && data.averageRating <= 5
+        && data.reviewCount is int && data.reviewCount >= 0
+        && data.services is list && data.services.size() <= 20
+        && data.tags is list && data.tags.size() <= 20;
+    }
+
     // Histórico pessoal via collectionGroup: consulta limitada ao autor.
     // Reviews de um posto continuam públicas; isto não concede escrita.
     match /{path=**}/reviews/{reviewId} {
@@ -77,6 +126,7 @@ service cloud.firestore {
       // Dono do posto: pode alterar qualquer campo (preços, horários, etc.)
       allow create: if isOwner(uid)
                     && hasStationRoleAfter(uid)
+                    && validPublicStation(request.resource.data)
                     && request.resource.data.state == 'SP'
                     && request.resource.data.city is string
                     && request.resource.data.citySearchKey is string
@@ -89,6 +139,7 @@ service cloud.firestore {
         // Caso 1: dono do posto altera qualquer campo do próprio posto.
         (isOwner(uid)
           && hasStationRoleAfter(uid)
+          && validPublicStation(request.resource.data)
           && request.resource.data.state == 'SP'
           && request.resource.data.city is string
           && request.resource.data.citySearchKey is string
@@ -106,6 +157,8 @@ service cloud.firestore {
         // permitida por escrita (no máximo +1 review, rating dentro da
         // faixa), não o abuso completo. Ver SCHEMA-FIRESTORE.md.
         (isSignedIn()
+          && request.resource.data.averageRating is number
+          && request.resource.data.reviewCount is int
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['averageRating', 'reviewCount'])
           && request.resource.data.averageRating >= 0

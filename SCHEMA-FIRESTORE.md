@@ -89,6 +89,29 @@
 > (ver seção "Consistência" abaixo). Isso evita 1 leitura de posto + N
 > leituras de review por posto listado.
 
+### Validação e leitura defensiva de `public_stations`
+
+Criação e edição pelo dono validam os tipos de nome/endereço/bairro/bandeira,
+coordenadas nos limites geográficos, `pricesUpdatedAt` como timestamp,
+`averageRating` numérico entre 0 e 5, `reviewCount` inteiro não negativo,
+e `services`/`tags` como listas de no máximo 20 itens.
+`prices` deve ser mapa: cada combustível admite `null` ou número entre
+0,01 e 99,999, conforme o formulário. `openingHours` deve ser mapa de dias,
+cada período `null` ou `{open, close}` no formato HH:mm válido. Campos de
+combustível/dia ausentes equivalem a não informado/fechado, respectivamente.
+
+A leitura de listas isola documentos com valores inválidos e registra seu
+caminho para diagnóstico, sem interromper os demais. A abertura direta de um
+posto inválido retorna `ValidationException`. Campos opcionais/ausentes de
+documentos antigos preservam os fallbacks de leitura existentes. Favoritos
+não são apagados; um posto inválido é omitido e o histórico de avaliações
+pode apresentá-lo como indisponível.
+
+As regras não corrigem documentos existentes. Registros antigos incompletos
+podem exigir reparo para aceitar novas edições pelo dono; não executar migração
+ou exclusão automática. Esta validação de formato não resolve as pendências
+separadas de exclusividade de papel e integridade dos agregados de reviews.
+
 ### `station_covers/{uid}` (leitura pública; escrita só pelo dono)
 ```
 {
