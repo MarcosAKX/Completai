@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../shared/models/station_brand.dart';
 import '../../../../shared/models/station_hours_status.dart';
 import '../../../../shared/models/station_opening_period.dart';
+import '../../../../shared/services/public_station_data.dart';
 import '../../domain/models/station_summary.dart';
 
 class PublicStationService {
@@ -18,7 +19,7 @@ class PublicStationService {
         .limit(50)
         .get();
 
-    return snapshot.docs.map(_map).toList(growable: false);
+    return mapValidPublicStations(snapshot.docs, _map);
   }
 
   StationSummary _map(QueryDocumentSnapshot<Map<String, dynamic>> doc) {

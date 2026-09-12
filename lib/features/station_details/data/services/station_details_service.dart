@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../shared/models/station_brand.dart';
 import '../../../../shared/models/station_fuel.dart';
+import '../../../../shared/services/public_station_data.dart';
 import '../../domain/models/station_details.dart';
 import '../../domain/models/station_review.dart';
 import '../../domain/models/station_review_page.dart';
@@ -32,6 +33,7 @@ class StationDetailsService {
     if (data == null) {
       throw const ValidationException('Posto não encontrado.');
     }
+    validatePublicStationData(data);
     return _mapStation(snapshot.id, data);
   }
 
@@ -44,7 +46,10 @@ class StationDetailsService {
         .where(FieldPath.documentId, whereIn: ids)
         .limit(20)
         .get();
-    return snapshot.docs.map((doc) => _mapStation(doc.id, doc.data())).toList();
+    return mapValidPublicStations(
+      snapshot.docs,
+      (doc) => _mapStation(doc.id, doc.data()),
+    );
   }
 
   Future<List<StationReview>> readReviews(

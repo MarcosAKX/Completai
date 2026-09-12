@@ -26,6 +26,33 @@ before(async () => {
 beforeEach(async () => { await env.clearFirestore(); });
 after(async () => { await env?.cleanup(); });
 
+for (const [field, value] of [
+  ['prices', 'invalid'], ['prices', { ethanol: '3,99' }],
+  ['prices', { ethanol: -1 }], ['prices', { ethanol: 100 }],
+  ['prices', { ethanol: NaN }], ['prices', { ethanol: Infinity }],
+  ['openingHours', []], ['openingHours', { monday: { open: '25:00', close: '18:00' } }],
+  ['openingHours', { monday: 'aberto' }], ['brandName', 1],
+  ['pricesUpdatedAt', 'ontem'], ['latitude', 91], ['longitude', '0'],
+  ['services', 'loja'], ['tags', {}], ['averageRating', 6], ['reviewCount', 1.5],
+]) {
+  test(`posto rejeita formato inválido em ${field}: ${JSON.stringify(value)}`, async () => {
+    await seed(['gas_stations/station', station('station')]);
+    const ref = doc(database('station'), 'public_stations/station');
+    await assertFails(setDoc(ref, { ...publicStation('station'), [field]: value }));
+    await seed(['public_stations/station', publicStation('station')]);
+    await assertFails(updateDoc(ref, { [field]: value }));
+  });
+}
+test('posto aceita faixa do formulário, null, horários noturnos e 24 horas', async () => {
+  await seed(['gas_stations/station', station('station')]);
+  const ref = doc(database('station'), 'public_stations/station');
+  await assertSucceeds(setDoc(ref, { ...publicStation('station'),
+    prices: { gasolineRegular: 0.01, ethanol: 99.999, dieselS10: null },
+    openingHours: { monday: { open: '18:00', close: '02:00' }, tuesday: { open: '00:00', close: '00:00' } },
+  }));
+  await assertSucceeds(updateDoc(ref, { 'prices.ethanol': null }));
+});
+
 test('reviews públicas paginam datas iguais sem perder nem repetir documentos', async () => {
   const date = new Timestamp(1700000000, 123456789);
   await seed(...Array.from({ length: 21 }, (_, index) => {
