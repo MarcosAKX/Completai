@@ -147,6 +147,35 @@ test('dono não passa de 20 serviços ou marcadores', async () => {
   await assertFails(updateDoc(ref, { services: Array.from({ length: 21 }, (_, i) => `s${i}`) }));
   await assertFails(updateDoc(ref, { tags: Array.from({ length: 21 }, (_, i) => `t${i}`) }));
 });
+test('posto legado sem street/number/cep continua gravável', async () => {
+  await seed(['gas_stations/station', station('station')]);
+  const data = publicStation('station');
+  delete data.street;
+  delete data.number;
+  delete data.cep;
+  await assertSucceeds(setDoc(doc(database('station'), 'public_stations/station'), data));
+});
+test('dono grava endereço estruturado com CEP de 8 dígitos', async () => {
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', publicStation('station')]);
+  await assertSucceeds(updateDoc(doc(database('station'), 'public_stations/station'), {
+    address: 'Avenida Brasil, 250', street: 'Avenida Brasil', number: '250', cep: '14701010',
+  }));
+});
+test('CEP vazio é aceito; com máscara ou incompleto é recusado', async () => {
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', publicStation('station')]);
+  const ref = doc(database('station'), 'public_stations/station');
+  await assertSucceeds(updateDoc(ref, { cep: '' }));
+  await assertFails(updateDoc(ref, { cep: '14700-000' }));
+  await assertFails(updateDoc(ref, { cep: '147' }));
+  await assertFails(updateDoc(ref, { cep: 14700000 }));
+});
+test('número do imóvel não passa de 10 caracteres', async () => {
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', publicStation('station')]);
+  const ref = doc(database('station'), 'public_stations/station');
+  await assertSucceeds(updateDoc(ref, { number: 's/n' }));
+  await assertFails(updateDoc(ref, { number: '12345678901' }));
+  await assertFails(updateDoc(ref, { street: 'x'.repeat(201) }));
+});
 test('dono não cria posto público fora de SP', async () => {
   await seed(['gas_stations/station', station('station')]);
   await assertFails(setDoc(doc(database('station'), 'public_stations/station'), {

@@ -41,7 +41,14 @@ class FakePanelRepository implements StationPanelRepository {
   Failure? failWith;
   Map<StationFuel, double?>? savedPrices;
   StationBrand? savedBrand;
-  ({String address, String neighborhood, String city})? savedAddress;
+  ({
+    String street,
+    String number,
+    String neighborhood,
+    String city,
+    String cep,
+  })?
+  savedAddress;
   ({String name, String phone})? savedIdentity;
   ({List<String> services, List<String> tags})? savedInfo;
   WeeklyHours? savedHours;
@@ -71,14 +78,25 @@ class FakePanelRepository implements StationPanelRepository {
 
   @override
   Future<StationProfile> saveAddress({
-    required String address,
+    required String street,
+    required String number,
     required String neighborhood,
     required String city,
+    required String cep,
   }) async {
     if (failWith != null) throw failWith!;
-    savedAddress = (address: address, neighborhood: neighborhood, city: city);
+    savedAddress = (
+      street: street,
+      number: number,
+      neighborhood: neighborhood,
+      city: city,
+      cep: cep,
+    );
     return _profile = _profile.copyWith(
-      address: address,
+      address: number.isEmpty ? street : '$street, $number',
+      street: street,
+      number: number,
+      cep: cep,
       neighborhood: neighborhood,
       city: city,
     );
@@ -226,12 +244,17 @@ void main() {
     await container
         .read(stationPanelViewModelProvider.notifier)
         .saveAddress(
-          address: 'Av. Nova, 200',
+          street: 'Av. Nova',
+          number: '200',
           neighborhood: 'Jardim',
           city: 'Barretos',
+          cep: '14700-000',
         );
 
     expect(panel.savedAddress?.city, 'Barretos');
+    expect(panel.savedAddress?.street, 'Av. Nova');
+    expect(panel.savedAddress?.number, '200');
+    expect(panel.savedAddress?.cep, '14700-000');
   });
 
   test('salvar informações encaminha serviços e marcadores', () async {

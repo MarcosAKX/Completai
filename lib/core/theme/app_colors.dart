@@ -15,4 +15,8 @@ abstract final class AppColors {
   static const textSecondary = Color(0xFF6B7280);
   static const outline = Color(0xFFE3E6EC);
   static const error = Color(0xFFBA1A1A);
+
+  /// Selo "aberto agora" (Home, detalhe público, favoritos e painel do posto).
+  static const success = Color(0xFF168A49);
+  static const successSurface = Color(0xFFE5F7EC);
 }

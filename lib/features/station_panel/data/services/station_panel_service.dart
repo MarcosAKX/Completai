@@ -48,6 +48,14 @@ class StationPanelService {
         ? value.whereType<String>().where((s) => s.isNotEmpty).toList()
         : const [];
 
+    // Postos cadastrados antes de `street`/`number` existirem só têm a linha
+    // única em `address` — derivamos as partes para a tela de perfil abrir
+    // preenchida em vez de em branco.
+    final address = str(public['address']);
+    final legacy = StationAddressInput.splitLegacyLine(address);
+    final street = str(public['street'], legacy.$1);
+    final number = str(public['number'], legacy.$2);
+
     return StationProfile(
       uid: uid,
       name: str(public['brandName'], str(private['brandName'])),
@@ -55,7 +63,10 @@ class StationPanelService {
       phone: str(private['phone']),
       email: str(private['email']),
       brand: StationBrand.fromWire(public['brand']),
-      address: str(public['address']),
+      address: address,
+      street: street,
+      number: number,
+      cep: str(public['cep']).replaceAll(RegExp(r'\D'), ''),
       neighborhood: str(public['neighborhood']),
       city: str(public['city']),
       state: str(public['state'], FirestoreCollections.defaultState),
@@ -94,21 +105,23 @@ class StationPanelService {
 
   Future<void> writeAddress(
     String uid,
-    String address,
-    String neighborhood,
-    String city,
+    StationAddressInput input,
   ) async {
-    if (address.trim().isEmpty ||
-        neighborhood.trim().isEmpty ||
-        city.trim().isEmpty) {
-      throw const ValidationException('Preencha endereço, bairro e cidade.');
+    if (input.street.trim().isEmpty ||
+        input.neighborhood.trim().isEmpty ||
+        input.city.trim().isEmpty) {
+      throw const ValidationException('Preencha rua, bairro e cidade.');
     }
-    final coordinates = await _geocoding.resolve(
-      '${address.trim()}, ${neighborhood.trim()}, ${city.trim()}, Brasil',
-    );
+    if (input.cep.trim().isNotEmpty && !input.hasCep) {
+      throw const ValidationException('CEP incompleto.');
+    }
+    final coordinates = await _geocoding.resolve(input);
     await _public(uid).update({
-      'address': address.trim(),
-      'neighborhood': neighborhood.trim(),
+      'address': input.line,
+      'street': input.street.trim(),
+      'number': input.number.trim(),
+      'cep': input.cepDigits,
+      'neighborhood': input.neighborhood.trim(),
       'city': coordinates.city,
       'citySearchKey': coordinates.citySearchKey,
       'state': coordinates.state,

@@ -1,8 +1,15 @@
-// Máscaras simples sem dependência externa para telefone e CNPJ brasileiros.
+// Máscaras simples sem dependência externa para telefone, CNPJ e CEP.
 import 'package:flutter/services.dart';
 
 final phoneInputFormatter = _DigitMaskFormatter(phoneMask);
 final cnpjInputFormatter = _DigitMaskFormatter(cnpjMask);
+final cepInputFormatter = _DigitMaskFormatter(cepMask);
+
+String cepMask(String digits) {
+  final value = digits.substring(0, digits.length.clamp(0, 8));
+  if (value.length <= 5) return value;
+  return '${value.substring(0, 5)}-${value.substring(5)}';
+}
 
 String phoneMask(String digits) {
   final value = digits.substring(0, digits.length.clamp(0, 11));

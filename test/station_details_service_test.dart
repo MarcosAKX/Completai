@@ -1,5 +1,6 @@
 // Detalhe público: mapeamento, consultas limitadas, favorito e review atômica.
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:completai/core/errors/exceptions.dart';
 import 'package:completai/features/station_details/data/services/station_details_service.dart';
 import 'package:completai/features/station_details/domain/models/station_review_page.dart';
 import 'package:completai/shared/models/station_fuel.dart';
@@ -186,5 +187,43 @@ void main() {
     expect(station['averageRating'], closeTo(14 / 3, 0.001));
     expect(review['clientName'], 'Marcos');
     expect(review['rating'], 5);
+  });
+
+  test('reportReview grava a denúncia sob a review denunciada', () async {
+    final firestore = await _seeded();
+    final service = StationDetailsService(firestore);
+
+    await service.reportReview(
+      stationUid: _stationUid,
+      clientUid: 'client-2',
+      reporterUid: _stationUid,
+      reason: 'Comentário ofensivo.',
+    );
+
+    final report = await firestore
+        .collection('public_stations')
+        .doc(_stationUid)
+        .collection('reviews')
+        .doc('client-2')
+        .collection('reports')
+        .doc(_stationUid)
+        .get();
+    expect(report.exists, isTrue);
+    expect(report.data()!['reporterUid'], _stationUid);
+    expect(report.data()!['reason'], 'Comentário ofensivo.');
+  });
+
+  test('reportReview rejeita motivo vazio', () async {
+    final service = StationDetailsService(await _seeded());
+
+    await expectLater(
+      service.reportReview(
+        stationUid: _stationUid,
+        clientUid: 'client-2',
+        reporterUid: _stationUid,
+        reason: '   ',
+      ),
+      throwsA(isA<ValidationException>()),
+    );
   });
 }

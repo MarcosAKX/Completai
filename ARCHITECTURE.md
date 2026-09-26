@@ -69,7 +69,9 @@ lib/
 
 > `shared/` guarda o que é genuinamente transversal a features. Hoje:
 > `shared/models/station_brand.dart` (bandeira do posto — usada pela
-> listagem do motorista e pelo painel do dono) e
+> listagem do motorista e pelo painel do dono),
+> `shared/models/service_area.dart` (cidade atendida no MVP — usada pelo
+> seletor da home, pelo cadastro do posto e pelo perfil do posto) e
 > `shared/services/address_geocoding_service.dart` (geocodificação de
 > endereço — usada no cadastro e na edição de endereço do posto).
 

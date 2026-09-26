@@ -7,11 +7,11 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../providers/station_panel_providers.dart';
-import '../widgets/station_panel_placeholder_tab.dart';
 import 'station_hours_tab.dart';
 import 'station_info_tab.dart';
 import 'station_prices_tab.dart';
 import 'station_profile_page.dart';
+import 'station_reviews_tab.dart';
 
 class StationPanelPage extends ConsumerStatefulWidget {
   const StationPanelPage({super.key});
@@ -69,12 +69,7 @@ class _StationPanelPageState extends ConsumerState<StationPanelPage> {
             StationPricesTab(),
             StationInfoTab(),
             StationHoursTab(),
-            StationPanelPlaceholderTab(
-              icon: Icons.reviews_outlined,
-              title: 'Avaliações',
-              message:
-                  'As avaliações dos clientes aparecerão aqui quando começarem a avaliar.',
-            ),
+            StationReviewsTab(),
           ],
         ),
         AsyncError(:final error) => _PanelError(message: error.toString()),

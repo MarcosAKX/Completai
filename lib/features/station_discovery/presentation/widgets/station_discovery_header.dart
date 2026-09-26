@@ -195,7 +195,7 @@ class _LocationError extends ConsumerWidget {
 
 Future<void> _chooseCity(BuildContext context, WidgetRef ref) async {
   final vm = ref.read(stationDiscoveryViewModelProvider.notifier);
-  const cities = StationDiscoveryScope.availableCities;
+  const cities = ServiceArea.cities;
 
   final selectedCity = await showModalBottomSheet<String>(
     context: context,

@@ -104,13 +104,62 @@ void main() {
     final firestore = await _seeded();
     final service = StationPanelService(firestore, _geocoding());
 
-    await service.writeAddress(_uid, 'Av. Nova, 200', 'Jardim', 'barretos');
+    await service.writeAddress(
+      _uid,
+      const StationAddressInput(
+        street: 'Av. Nova',
+        number: '200',
+        neighborhood: 'Jardim',
+        city: 'barretos',
+        cep: '14700-000',
+      ),
+    );
 
     final data = (await firestore.collection('public_stations').doc(_uid).get())
         .data()!;
     expect(data['city'], 'Barretos');
     expect(data['citySearchKey'], 'barretos');
     expect(data['state'], 'SP');
+    // `address` continua sendo a linha pronta para exibição.
+    expect(data['address'], 'Av. Nova, 200');
+    expect(data['street'], 'Av. Nova');
+    expect(data['number'], '200');
+    expect(data['cep'], '14700000');
+  });
+
+  test('CEP pela metade é recusado antes de geocodificar', () async {
+    final firestore = await _seeded();
+    final service = StationPanelService(firestore, _geocoding());
+
+    await expectLater(
+      service.writeAddress(
+        _uid,
+        const StationAddressInput(
+          street: 'Av. Nova',
+          number: '200',
+          neighborhood: 'Jardim',
+          city: 'barretos',
+          cep: '147',
+        ),
+      ),
+      throwsA(isA<ValidationException>()),
+    );
+  });
+
+  test('posto antigo sem street deriva as partes de address', () async {
+    final firestore = await _seeded();
+    // O seed não tem `street`/`number` — é exatamente um posto antigo.
+    await firestore.collection('public_stations').doc(_uid).update({
+      'address': 'Avenida Brasil, 1000',
+    });
+    final service = StationPanelService(firestore, _geocoding());
+
+    final profile = await service.read(_uid);
+
+    expect(profile.address, 'Avenida Brasil, 1000');
+    expect(profile.street, 'Avenida Brasil');
+    expect(profile.number, '1000');
+    expect(profile.cep, '');
   });
 
   test('bandeira é persistida em public_stations', () async {

@@ -1,12 +1,15 @@
-// Segunda etapa: cidade editável; a UF é derivada e validada pela geocodificação.
+// Segunda etapa: cidade fixa no MVP; a UF é derivada e validada pela geocodificação.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/app.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/utils/contact_input_formatters.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_read_only_field.dart';
 import '../../../../core/widgets/app_step_progress.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../shared/models/service_area.dart';
 import '../../domain/models/station_registration.dart';
 import '../providers/auth_providers.dart';
 import '../widgets/auth_error_message.dart';
@@ -24,14 +27,16 @@ class StationRegistrationStep2Page extends ConsumerStatefulWidget {
 class _StationRegistrationStep2PageState
     extends ConsumerState<StationRegistrationStep2Page> {
   final _form = GlobalKey<FormState>();
-  final _address = TextEditingController(),
+  final _street = TextEditingController(),
+      _number = TextEditingController(),
       _neighborhood = TextEditingController(),
-      _city = TextEditingController();
+      _cep = TextEditingController();
   @override
   void dispose() {
-    _address.dispose();
+    _street.dispose();
+    _number.dispose();
     _neighborhood.dispose();
-    _city.dispose();
+    _cep.dispose();
     super.dispose();
   }
 
@@ -46,9 +51,11 @@ class _StationRegistrationStep2PageState
             cnpj: widget.draft.cnpj,
             brandName: widget.draft.brandName,
             phone: widget.draft.phone,
-            address: _address.text,
+            street: _street.text,
+            number: _number.text,
             neighborhood: _neighborhood.text,
-            city: _city.text,
+            city: ServiceArea.primaryCity,
+            cep: _cep.text,
           ),
         );
   }
@@ -91,11 +98,37 @@ class _StationRegistrationStep2PageState
           subtitle: 'Informe o endereço do posto.',
           children: [
             AppTextField(
-              label: 'Endereço',
-              controller: _address,
+              label: 'Rua / Avenida',
+              controller: _street,
               validator: requiredField,
-              hintText: 'Ex: Avenida Brasil, 1000',
-              prefixIcon: const Icon(Icons.map_outlined),
+              hintText: 'Ex: Avenida Brasil',
+              textCapitalization: TextCapitalization.words,
+              prefixIcon: const Icon(Icons.signpost_outlined),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: AppTextField(
+                    label: 'Número',
+                    controller: _number,
+                    validator: streetNumberField,
+                    hintText: '1000',
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: AppTextField(
+                    label: 'CEP',
+                    controller: _cep,
+                    validator: cepField,
+                    hintText: '14700-000',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [cepInputFormatter],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
@@ -103,16 +136,16 @@ class _StationRegistrationStep2PageState
               controller: _neighborhood,
               validator: requiredField,
               hintText: 'Ex: Centro',
+              textCapitalization: TextCapitalization.words,
               prefixIcon: const Icon(Icons.map_outlined),
             ),
             const SizedBox(height: AppSpacing.md),
-            AppTextField(
+            const AppReadOnlyField(
               label: 'Cidade',
-              controller: _city,
-              validator: requiredField,
-              hintText: 'Ex: Campinas',
-              textCapitalization: TextCapitalization.words,
-              prefixIcon: const Icon(Icons.location_city_outlined),
+              value: ServiceArea.primaryCity,
+              icon: Icons.location_city_outlined,
+              helperText:
+                  'O CompletAI atende apenas ${ServiceArea.primaryCity} nesta fase.',
             ),
             const SizedBox(height: AppSpacing.lg),
             AuthErrorMessage(error: error),

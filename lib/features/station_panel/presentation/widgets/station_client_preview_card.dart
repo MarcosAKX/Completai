@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/station_brand_badge.dart';
+import '../../../../shared/models/station_hours_status.dart';
 import '../../../station_cover/presentation/providers/station_cover_providers.dart';
 import '../../domain/models/station_profile.dart';
 
@@ -34,6 +35,11 @@ class StationClientPreviewCard extends ConsumerWidget {
       profile.neighborhood,
       profile.city,
     ].where((part) => part.trim().isNotEmpty).join(' • ');
+
+    final hoursStatus = stationHoursStatus(
+      DateTime.now(),
+      profile.openingHours.toOpeningPeriods(),
+    );
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -108,6 +114,7 @@ class StationClientPreviewCard extends ConsumerWidget {
                     spacing: AppSpacing.sm,
                     runSpacing: AppSpacing.sm,
                     children: [
+                      _OpenStatusChip(status: hoursStatus),
                       _PreviewChip(
                         icon: Icons.local_gas_station_outlined,
                         label:
@@ -190,6 +197,45 @@ class _CoverFallback extends StatelessWidget {
                 ),
               ],
             ),
+    ),
+  );
+}
+
+/// Mesmo cálculo de "aberto/fechado" usado na Home, no detalhe público e nos
+/// favoritos (`stationHoursStatus`) — aqui só o dono vê, refletindo o horário
+/// que ele mesmo configurou na aba Horários.
+class _OpenStatusChip extends StatelessWidget {
+  const _OpenStatusChip({required this.status});
+
+  final ({bool isOpen, String label}) status;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xs,
+    ),
+    decoration: BoxDecoration(
+      color: status.isOpen ? AppColors.successSurface : AppColors.outline,
+      borderRadius: BorderRadius.circular(AppSpacing.sm),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.circle,
+          size: 9,
+          color: status.isOpen ? AppColors.success : AppColors.textSecondary,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Text(
+          status.label,
+          style: AppTextStyles.caption.copyWith(
+            color: status.isOpen ? AppColors.success : AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     ),
   );
 }
