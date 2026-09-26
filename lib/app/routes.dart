@@ -18,7 +18,6 @@ abstract final class AppRoutes {
   static const clientRegistration = '/register/client';
   static const stationRegistrationStep1 = '/register/station/step-1';
   static const stationRegistrationStep2 = '/register/station/step-2';
-  static const stationDetails = '/station-details';
   static const clientProfile = '/profile';
   static const favorites = '/favorites';
   static const myReviews = '/my-reviews';
