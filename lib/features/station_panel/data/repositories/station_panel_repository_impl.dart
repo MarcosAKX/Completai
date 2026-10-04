@@ -3,6 +3,7 @@
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failure_mapper.dart';
 import '../../../../shared/models/station_brand.dart';
+import '../../../../shared/services/address_geocoding_service.dart';
 import '../../domain/models/opening_hours.dart';
 import '../../domain/models/station_fuel.dart';
 import '../../domain/models/station_profile.dart';
@@ -52,13 +53,24 @@ class StationPanelRepositoryImpl implements StationPanelRepository {
 
   @override
   Future<StationProfile> saveAddress({
-    required String address,
+    required String street,
+    required String number,
     required String neighborhood,
     required String city,
+    required String cep,
   }) async {
     final uid = _requireUid();
     await guardInfra(
-      () => _service.writeAddress(uid, address, neighborhood, city),
+      () => _service.writeAddress(
+        uid,
+        StationAddressInput(
+          street: street,
+          number: number,
+          neighborhood: neighborhood,
+          city: city,
+          cep: cep,
+        ),
+      ),
     );
     return _reload();
   }

@@ -74,9 +74,19 @@ service cloud.firestore {
         && validPeriod(hours.get('sunday', null));
     }
 
+    // `street`/`number`/`cep` entraram depois de `address`; postos antigos não
+    // os têm, então usamos `get(campo, padrao)` — valida o formato quando o
+    // campo existe sem rejeitar documento legado. `cep` é só dígitos (o client
+    // tira a máscara) e pode ser vazio quando o dono não informou.
     function validPublicStation(data) {
       return data.brandName is string
         && data.address is string && data.neighborhood is string
+        && data.get('street', '') is string
+        && data.get('street', '').size() <= 200
+        && data.get('number', '') is string
+        && data.get('number', '').size() <= 10
+        && data.get('cep', '') is string
+        && data.get('cep', '').matches('^([0-9]{8})?$')
         && data.get('brand', '') is string
         && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
         && data.longitude is number && data.longitude >= -180 && data.longitude <= 180

@@ -111,7 +111,8 @@ class AuthProfileService {
     if (registration.cnpj.trim().isEmpty ||
         registration.brandName.trim().isEmpty ||
         registration.phone.trim().isEmpty ||
-        registration.address.trim().isEmpty ||
+        registration.street.trim().isEmpty ||
+        registration.number.trim().isEmpty ||
         registration.neighborhood.trim().isEmpty ||
         registration.city.trim().isEmpty) {
       throw const ValidationException('Preencha todos os dados do posto.');
@@ -121,11 +122,14 @@ class AuthProfileService {
       return;
     }
 
-    final coordinates = await _geocoding.resolve(
-      '${registration.address.trim()}, '
-      '${registration.neighborhood.trim()}, '
-      '${registration.city.trim()}, Brasil',
+    final addressInput = StationAddressInput(
+      street: registration.street,
+      number: registration.number,
+      neighborhood: registration.neighborhood,
+      city: registration.city,
+      cep: registration.cep,
     );
+    final coordinates = await _geocoding.resolve(addressInput);
 
     // Revalida após a geocodificação.
     if (!await _shouldCreateProfile(uid, AccountRole.gasStation)) {
@@ -150,7 +154,12 @@ class AuthProfileService {
       {
         'uid': uid,
         'brandName': registration.brandName.trim(),
-        'address': registration.address.trim(),
+        // `address` continua sendo a linha pronta para exibição ("Rua X, 100");
+        // `street`/`number`/`cep` são a fonte estruturada que a alimenta.
+        'address': addressInput.line,
+        'street': registration.street.trim(),
+        'number': registration.number.trim(),
+        'cep': addressInput.cepDigits,
         'neighborhood': registration.neighborhood.trim(),
         'city': coordinates.city,
         'citySearchKey': coordinates.citySearchKey,

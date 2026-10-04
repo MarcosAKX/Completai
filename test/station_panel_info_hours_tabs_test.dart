@@ -52,9 +52,11 @@ class _FakeRepo implements StationPanelRepository {
   }) async => _profile;
   @override
   Future<StationProfile> saveAddress({
-    required String address,
+    required String street,
+    required String number,
     required String neighborhood,
     required String city,
+    required String cep,
   }) async => _profile;
   @override
   Future<StationProfile> saveBrand(StationBrand brand) async => _profile;

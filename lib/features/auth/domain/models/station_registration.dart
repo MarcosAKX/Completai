@@ -4,17 +4,28 @@ class StationRegistration {
     required this.cnpj,
     required this.brandName,
     required this.phone,
-    required this.address,
+    required this.street,
+    required this.number,
     required this.neighborhood,
     required this.city,
+    this.cep = '',
   });
 
   final String cnpj;
   final String brandName;
   final String phone;
-  final String address;
+
+  /// Rua/avenida, sem o número.
+  final String street;
+
+  /// Número do imóvel — aceita "S/N".
+  final String number;
+
   final String neighborhood;
   final String city;
+
+  /// CEP como digitado. Opcional: melhora a precisão da geocodificação.
+  final String cep;
 }
 
 // Dados da primeira etapa, mantidos somente em memória até a confirmação final.

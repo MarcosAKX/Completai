@@ -1,12 +1,15 @@
-// Resolve um endereço livre em coordenadas + cidade canônica, validando a UF.
+// Resolve um endereço estruturado em coordenadas + cidade canônica, validando a UF.
 //
 // Compartilhado: usado no cadastro do posto (`auth`) e na edição de endereço
 // pelo dono (`station_panel`). Roda 1x por operação, nunca em listagem.
 //
 // Estratégia: tenta o plugin nativo `geocoding` (Android/iOS); se ele não
 // existe (web/desktop) ou falha (Geocoder do emulador cai), cai no fallback
-// HTTP do Nominatim (OpenStreetMap, grátis, sem chave). A validação de SP e a
-// extração de cidade são as mesmas nos dois caminhos.
+// HTTP do Nominatim (OpenStreetMap, grátis, sem chave). No HTTP tenta primeiro
+// a busca estruturada (rua/número/CEP/cidade em campos separados, mais
+// precisa) e depois a busca livre, que é o comportamento antigo e continua
+// funcionando quando o CEP está errado ou o OSM não conhece aquele logradouro.
+// A validação de SP e a extração de cidade são as mesmas em todos os caminhos.
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -16,6 +19,66 @@ import 'package:http/http.dart' as http;
 import '../../core/constants/firestore_collections.dart';
 import '../../core/errors/exceptions.dart';
 import '../../core/utils/city_search_key.dart';
+
+/// Endereço como o dono digita: em partes, não numa linha só.
+class StationAddressInput {
+  const StationAddressInput({
+    required this.street,
+    required this.number,
+    required this.neighborhood,
+    required this.city,
+    this.cep = '',
+  });
+
+  /// Rua/avenida, sem o número.
+  final String street;
+
+  /// Número do imóvel — aceita "S/N".
+  final String number;
+
+  final String neighborhood;
+  final String city;
+
+  /// CEP como digitado (com ou sem máscara). Opcional.
+  final String cep;
+
+  String get cepDigits => cep.replaceAll(RegExp(r'\D'), '');
+
+  bool get hasCep => cepDigits.length == 8;
+
+  /// Linha exibida ao cliente e gravada em `public_stations.address`.
+  String get line {
+    final trimmedStreet = street.trim();
+    final trimmedNumber = number.trim();
+    if (trimmedNumber.isEmpty) return trimmedStreet;
+    return '$trimmedStreet, $trimmedNumber';
+  }
+
+  /// Inverso de [line], para postos gravados antes de `street`/`number`
+  /// existirem: o cadastro antigo tinha um campo único e a convenção do hint
+  /// era "Avenida Brasil, 1000". Sem vírgula, tudo vira logradouro.
+  static (String street, String number) splitLegacyLine(String address) {
+    final text = address.trim();
+    final comma = text.lastIndexOf(',');
+    if (comma <= 0 || comma == text.length - 1) return (text, '');
+    final tail = text.substring(comma + 1).trim();
+    final looksLikeNumber =
+        tail.isNotEmpty &&
+        tail.length <= 10 &&
+        RegExp(r'^(s/?n|\d+[a-zA-Z]?)$', caseSensitive: false).hasMatch(tail);
+    if (!looksLikeNumber) return (text, '');
+    return (text.substring(0, comma).trim(), tail);
+  }
+
+  /// Consulta livre — usada pelo geocoder nativo e como último recurso no HTTP.
+  String get freeForm => [
+    line,
+    neighborhood.trim(),
+    city.trim(),
+    if (hasCep) '${cepDigits.substring(0, 5)}-${cepDigits.substring(5)}',
+    'Brasil',
+  ].where((part) => part.isNotEmpty).join(', ');
+}
 
 class StationCoordinates {
   const StationCoordinates(
@@ -57,18 +120,23 @@ class AddressGeocodingService {
   final Future<List<Location>> Function(String)? _nativeLocations;
   final Future<List<Placemark>> Function(String)? _nativePlacemarks;
 
-  Future<StationCoordinates> resolve(String address) async {
-    final native = await _tryNative(address);
+  Future<StationCoordinates> resolve(StationAddressInput input) async {
+    final native = await _tryNative(input.freeForm);
     if (native != null) return _validate(native);
 
-    final (fromHttp, httpFailed) = await _tryHttp(address);
-    if (fromHttp != null) return _validate(fromHttp);
+    // Estruturada primeiro (mais precisa), livre depois (mais tolerante).
+    var requestFailed = false;
+    for (final uri in _httpQueries(input)) {
+      final (result, failed) = await _tryHttp(uri);
+      if (result != null) return _validate(result);
+      requestFailed = requestFailed || failed;
+    }
 
     throw ValidationException(
-      httpFailed
+      requestFailed
           ? 'Não foi possível confirmar o endereço agora. Verifique sua '
                 'conexão e tente de novo.'
-          : 'Endereço não encontrado. Confira o endereço do posto.',
+          : 'Endereço não encontrado. Confira rua, número, bairro e CEP.',
     );
   }
 
@@ -106,18 +174,42 @@ class AddressGeocodingService {
     }
   }
 
-  /// Retorna `(resultado, falhouPorErro)`. `falhouPorErro` é `true` quando a
-  /// requisição em si quebrou (rede, CORS, timeout) — para diferenciar de
-  /// "endereço realmente não existe".
-  Future<(_RawGeocode?, bool)> _tryHttp(String address) async {
-    final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
-      'q': address,
+  /// Nominatim não aceita busca estruturada e livre na mesma requisição, então
+  /// são duas URLs distintas, tentadas em ordem.
+  List<Uri> _httpQueries(StationAddressInput input) {
+    const common = {
       'format': 'jsonv2',
       'addressdetails': '1',
       'limit': '1',
       'countrycodes': 'br',
       'accept-language': 'pt-BR',
-    });
+    };
+
+    final number = input.number.trim();
+    final street = input.street.trim();
+    final structured = <String, String>{
+      ...common,
+      // Convenção do Nominatim: número antes do logradouro.
+      'street': number.isEmpty ? street : '$number $street',
+      'city': input.city.trim(),
+      'state': 'São Paulo',
+      'country': 'Brasil',
+      if (input.hasCep) 'postalcode': input.cepDigits,
+    };
+
+    return [
+      Uri.https('nominatim.openstreetmap.org', '/search', structured),
+      Uri.https('nominatim.openstreetmap.org', '/search', {
+        ...common,
+        'q': input.freeForm,
+      }),
+    ];
+  }
+
+  /// Retorna `(resultado, falhouPorErro)`. `falhouPorErro` é `true` quando a
+  /// requisição em si quebrou (rede, CORS, timeout) — para diferenciar de
+  /// "endereço realmente não existe".
+  Future<(_RawGeocode?, bool)> _tryHttp(Uri uri) async {
     try {
       final response = await _http
           .get(uri, headers: const {'User-Agent': 'CompletAI/1.0 (TCC)'})

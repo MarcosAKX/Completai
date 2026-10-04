@@ -3,6 +3,7 @@
 // Formato no Firestore (`public_stations.openingHours`): mapa com as 7 chaves
 // `monday`..`sunday`, cada uma `{ open: "HH:mm", close: "HH:mm" }` ou `null`
 // (dia fechado). Ver SCHEMA-FIRESTORE.md.
+import '../../../../shared/models/station_opening_period.dart';
 
 enum Weekday {
   monday('monday', 'Segunda'),
@@ -71,6 +72,19 @@ class WeeklyHours {
   /// Mapa do Firestore: as 7 chaves sempre presentes, `null` para dia fechado.
   Map<String, dynamic> toWire() => {
     for (final day in Weekday.values) day.wireKey: _byDay[day]?.toWire(),
+  };
+
+  /// Mesmos dados no formato que `shared/models/station_hours_status.dart`
+  /// espera — usado para mostrar "aberto/fechado agora" na prévia do painel,
+  /// com o mesmo cálculo já usado na Home, no detalhe e nos favoritos.
+  Map<String, StationOpeningPeriod?> toOpeningPeriods() => {
+    for (final day in Weekday.values)
+      day.wireKey: _byDay[day] == null
+          ? null
+          : StationOpeningPeriod(
+              open: _byDay[day]!.open,
+              close: _byDay[day]!.close,
+            ),
   };
 
   static WeeklyHours fromWire(Object? value) {

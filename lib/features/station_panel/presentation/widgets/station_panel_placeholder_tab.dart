@@ -1,4 +1,4 @@
-// Aba ainda não implementada (Informações, Horários, Avaliações).
+// Estado "nada aqui ainda": aba não implementada ou lista vazia.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';

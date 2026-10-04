@@ -84,6 +84,14 @@ class StationDetailsRepositoryImpl implements StationDetailsRepository {
   );
 
   @override
-  Future<void> openDirections(StationDetails details) =>
-      guardInfra(() => _directions.open(details.latitude, details.longitude));
+  Future<void> openDirections(StationDetails details) => guardInfra(
+    () => _directions.open(
+      address: details.address,
+      neighborhood: details.neighborhood,
+      city: details.city,
+      state: details.state,
+      latitude: details.latitude,
+      longitude: details.longitude,
+    ),
+  );
 }

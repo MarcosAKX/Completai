@@ -22,9 +22,11 @@ abstract interface class StationPanelRepository {
   /// Novo endereço: re-geocodifica, exige UF `SP` e regrava cidade canônica,
   /// chave de busca e coordenadas em `public_stations`.
   Future<StationProfile> saveAddress({
-    required String address,
+    required String street,
+    required String number,
     required String neighborhood,
     required String city,
+    required String cep,
   });
 
   /// Bandeira exibida ao cliente.

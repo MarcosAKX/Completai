@@ -20,6 +20,9 @@ class StationProfile {
     required this.services,
     required this.tags,
     required this.openingHours,
+    this.street = '',
+    this.number = '',
+    this.cep = '',
   });
 
   final String uid;
@@ -36,7 +39,20 @@ class StationProfile {
 
   final StationBrand brand;
 
+  /// Linha pronta para exibição ("Avenida Brasil, 1000"), composta a partir
+  /// de [street] e [number]. Mantida porque é o que o cliente lê.
   final String address;
+
+  /// Rua/avenida sem o número. Vazio em postos anteriores ao campo — nesse
+  /// caso a tela deriva de [address] com `StationAddressInput.splitLegacyLine`.
+  final String street;
+
+  /// Número do imóvel — aceita "S/N". Vazio em postos antigos.
+  final String number;
+
+  /// CEP só com dígitos. Vazio quando o dono não informou.
+  final String cep;
+
   final String neighborhood;
   final String city;
 
@@ -68,6 +84,9 @@ class StationProfile {
     String? phone,
     StationBrand? brand,
     String? address,
+    String? street,
+    String? number,
+    String? cep,
     String? neighborhood,
     String? city,
     String? state,
@@ -83,6 +102,9 @@ class StationProfile {
     email: email,
     brand: brand ?? this.brand,
     address: address ?? this.address,
+    street: street ?? this.street,
+    number: number ?? this.number,
+    cep: cep ?? this.cep,
     neighborhood: neighborhood ?? this.neighborhood,
     city: city ?? this.city,
     state: state ?? this.state,

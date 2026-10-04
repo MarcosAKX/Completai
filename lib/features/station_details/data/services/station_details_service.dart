@@ -177,6 +177,33 @@ class StationDetailsService {
     });
   }
 
+  /// Denúncia de uma review específica, feita pelo dono do posto (ou
+  /// qualquer usuário autenticado). Caminho e regras já existiam
+  /// (`public_stations/{uid}/reviews/{clientUid}/reports/{reporterUid}`),
+  /// só não havia código Dart que escrevesse nele.
+  Future<void> reportReview({
+    required String stationUid,
+    required String clientUid,
+    required String reporterUid,
+    required String reason,
+  }) async {
+    if (reason.trim().isEmpty) {
+      throw const ValidationException('Descreva o motivo da denúncia.');
+    }
+    await _firestore
+        .collection('public_stations')
+        .doc(stationUid)
+        .collection('reviews')
+        .doc(clientUid)
+        .collection('reports')
+        .doc(reporterUid)
+        .set({
+          'reporterUid': reporterUid,
+          'reason': reason.trim(),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+  }
+
   StationDetails _mapStation(String uid, Map<String, dynamic> data) {
     final prices = data['prices'] as Map<String, dynamic>? ?? const {};
     final hours = data['openingHours'] as Map<String, dynamic>? ?? const {};

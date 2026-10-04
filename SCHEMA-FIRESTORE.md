@@ -50,7 +50,13 @@
   brand: string,               // bandeira: 'shell' | 'ipiranga' | 'petrobras' |
                                // 'ale' | 'raizen' | 'branca' | 'outra'.
                                // Ausente/desconhecido = tratado como 'branca'.
-  address: string,
+  address: string,             // linha pronta para exibição ("Rua X, 100"),
+                               // composta de street + number. É o que o
+                               // cliente lê (home, detalhe, favoritos).
+  street: string,              // rua/avenida sem o número — fonte estruturada
+  number: string,              // número do imóvel; aceita "S/N", até 10 chars
+  cep: string,                 // só dígitos ('' quando não informado); a
+                               // máscara é do formulário, não do documento
   neighborhood: string,       // bairro — ajuda o motorista a localizar o posto
   city: string,                // cidade canônica retornada pela geocodificação
   citySearchKey: string,       // cidade normalizada para consulta (minúscula/sem acento)
@@ -195,11 +201,29 @@ mas impede clientes e contas sem perfil de publicarem dados de posto.
 
 ## Geolocalização
 
-- `latitude`/`longitude` são gravados **uma única vez**, no momento do
-  cadastro do posto, usando o pacote `geocoding` sobre o campo `address`.
+- `latitude`/`longitude` são gravados no cadastro do posto e reescritos
+  quando o dono edita o endereço no painel — nunca em listagem.
+- A consulta parte das **partes** (`street`, `number`, `neighborhood`,
+  `city`, `cep`), não da linha única. `AddressGeocodingService` tenta, nesta
+  ordem: plugin nativo `geocoding` (Android/iOS) com a consulta livre;
+  Nominatim **estruturado** (`street="<número> <rua>"`, `city`, `state`,
+  `country`, `postalcode`); Nominatim **livre** (`q=`), que é o
+  comportamento anterior e cobre CEP errado ou logradouro desconhecido do
+  OSM. `city`/`state`/`citySearchKey` gravados vêm sempre da resposta do
+  geocoder, nunca do texto digitado.
 - Distância até o usuário é **calculada no client**, em tempo de
   renderização, usando `geolocator` sobre a posição atual do usuário e as
   coordenadas já salvas — nunca gera leitura extra ao Firestore.
+- **Precisão conhecida:** o OpenStreetMap tem pouquíssimo número de porta no
+  interior de SP (Bebedouro inteira: 39 objetos com `addr:housenumber`, medido
+  via Overpass em 26/09/2026). Quando o número não existe no OSM, o Nominatim
+  devolve o centro da via, então `latitude`/`longitude` são precisos ao nível
+  de **logradouro**, não de imóvel — erro típico de algumas centenas de metros.
+  Isso afeta a distância exibida no card, não a ordenação por preço nem o
+  filtro por cidade (que usa `citySearchKey`). O "Como chegar" contorna
+  enviando o endereço em texto ao Google Maps. Correção definitiva seria o
+  dono ajustar o pino num mapa e gravar a coordenada escolhida — ainda não
+  implementado.
 - Se a geocodificação falhar no cadastro (endereço não encontrado), o posto
   não deve ser salvo até o dono corrigir o endereço — não persista
   `latitude`/`longitude` nulos silenciosamente.

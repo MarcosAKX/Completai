@@ -46,4 +46,14 @@ void main() {
     expect(Weekday.values.every(hours.isOpen), isTrue);
     expect(hours.forDay(Weekday.sunday)!.open, '07:00');
   });
+
+  test('toOpeningPeriods converte para o formato do status compartilhado', () {
+    final hours = const WeeklyHours.empty()
+        .withDay(Weekday.monday, const DayHours(open: '08:00', close: '18:00'));
+    final periods = hours.toOpeningPeriods();
+    expect(periods.keys, containsAll(Weekday.values.map((d) => d.wireKey)));
+    expect(periods['monday']?.open, '08:00');
+    expect(periods['monday']?.close, '18:00');
+    expect(periods['tuesday'], isNull);
+  });
 }

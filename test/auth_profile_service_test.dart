@@ -14,9 +14,12 @@ class TestGeocoding extends AddressGeocodingService {
   bool fail = false;
   int calls = 0;
 
+  StationAddressInput? lastInput;
+
   @override
-  Future<StationCoordinates> resolve(String address) async {
+  Future<StationCoordinates> resolve(StationAddressInput input) async {
     calls++;
+    lastInput = input;
 
     if (fail) {
       throw const ValidationException('Endereço não encontrado.');
@@ -41,7 +44,9 @@ void main() {
     cnpj: '12345678000190',
     brandName: 'Posto Teste',
     phone: '(17) 3333-4444',
-    address: 'Rua Teste, 100',
+    street: 'Rua Teste',
+    number: '100',
+    cep: '14700-000',
     neighborhood: 'Centro',
     city: 'Ribeirão Preto',
   );
@@ -163,6 +168,9 @@ void main() {
       'uid',
       'brandName',
       'address',
+      'street',
+      'number',
+      'cep',
       'neighborhood',
       'city',
       'citySearchKey',
@@ -177,6 +185,13 @@ void main() {
       'services',
       'tags',
     });
+
+    // A linha exibida é composta; o CEP é gravado só com dígitos.
+    expect(public['address'], 'Rua Teste, 100');
+    expect(public['street'], 'Rua Teste');
+    expect(public['number'], '100');
+    expect(public['cep'], '14700000');
+    expect(geocoding.lastInput?.freeForm, contains('Rua Teste, 100'));
 
     expect(public['city'], 'Ribeirão Preto');
 

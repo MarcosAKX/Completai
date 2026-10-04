@@ -154,9 +154,43 @@ documentação.
   o mesmo fundo branco, borda azul suave e sombra discreta dos cartões da home.
 - Botão "Como chegar" no detalhe público com título em destaque, textos
   alinhados à esquerda, ícones de rota/link externo e cantos arredondados.
-- O seletor manual da home oferece somente Bebedouro durante o MVP por uma
-  constante de domínio; ele não lê toda a coleção de postos para descobrir
-  cidades. O schema permanece preparado para expansão dentro de SP.
+  O destino enviado ao Google Maps é o **endereço em texto**
+  ("Rua X, 100, Centro, Bebedouro, SP, Brasil"), não a coordenada gravada:
+  o OSM quase não tem número de porta no interior de SP (Bebedouro inteira
+  tem 39 objetos com `addr:housenumber`), então `latitude`/`longitude`
+  apontam para o centro da via. O Google tem esses números. A coordenada
+  segue como destino só quando não há endereço utilizável. Ver
+  `StationDirectionsService.buildQuery`.
+- A cidade atendida no MVP vive em `shared/models/service_area.dart`
+  (`ServiceArea.primaryCity` / `ServiceArea.cities`), que substituiu
+  `station_discovery/domain/station_discovery_scope.dart` quando passou a ser
+  usada por três features. O seletor manual da home oferece só essa lista e
+  não lê toda a coleção de postos para descobrir cidades. O schema permanece
+  preparado para expansão dentro de SP: basta editar a constante.
+- A etapa 2 do cadastro do posto e a tela de perfil do posto **não deixam
+  escolher a cidade** — exibem `ServiceArea.primaryCity` num
+  `core/widgets/app_read_only_field.dart` travado, com a nota de que o app
+  atende só essa cidade nesta fase, e enviam sempre esse valor. A
+  geocodificação continua confirmando SP e derivando a `city` canônica — a
+  constante restringe a escolha, não substitui a validação. Postos legados
+  gravados com outra cidade são normalizados no próximo salvamento de
+  endereço.
+- **Endereço em partes**, não em linha única: `street` (rua/avenida),
+  `number` (aceita "S/N"), `cep` (só dígitos no documento; máscara
+  `cepInputFormatter` só no formulário) e `neighborhood`. `address` continua
+  existindo como a linha pronta para exibição ("Rua X, 100"), composta por
+  `StationAddressInput.line` — nenhum consumidor (home, detalhe, favoritos,
+  prévia) precisou mudar. Postos anteriores ao campo têm `street`/`number`
+  derivados de `address` na leitura por
+  `StationAddressInput.splitLegacyLine`, que só trata a cauda como número
+  quando ela parece um (dígitos ou "s/n").
+- CEP é **obrigatório no cadastro** e **opcional no perfil** — posto legado
+  não tem um gravado, e exigir preenchimento travaria até a edição de nome,
+  já que `Form.validate()` valida a tela inteira.
+- Geocodificação em três tentativas, nesta ordem: plugin nativo (consulta
+  livre) → Nominatim **estruturado** (`street`/`city`/`state`/`postalcode`,
+  mais preciso) → Nominatim **livre** (`q=`, comportamento antigo, cobre CEP
+  errado). Detalhes em `SCHEMA-FIRESTORE.md`, seção "Geolocalização".
 - O cadastro do posto persiste `city` canônica e `citySearchKey` derivadas da
   geocodificação. As rules exigem os campos em escritas do dono.
 - Escritas do dono em `public_stations/{uid}` e `station_covers/{uid}` também
@@ -167,10 +201,21 @@ documentação.
   o antigo `HomePlaceholder`. Bottom nav de 4 abas: **Preços** (edita os 5
   combustíveis, publicação por diff), **Informações** (edita `services` via
   chips + `tags` livres, teto 20), **Horários** (edita `openingHours` por dia,
-  "copiar p/ todos"), **Avaliações** (placeholder). Card "Prévia para
-  clientes" espelha o card da listagem; "Editar exibição" ajusta **bandeira**
-  (`public_stations.brand`) e **foto**. Tela de **Perfil** edita nome, celular
-  e endereço (re-geocodifica, valida SP); CNPJ só exibe; botão Sair.
+  "copiar p/ todos"), **Avaliações** (lista paginada das reviews do próprio
+  posto, com "Denunciar" por review). Card "Prévia para clientes" espelha o
+  card da listagem, incluindo o status "aberto/fechado agora"; "Editar
+  exibição" ajusta **bandeira** (`public_stations.brand`) e **foto**. Tela de
+  **Perfil** edita nome, celular e endereço (re-geocodifica, valida SP); CNPJ
+  só exibe; botão Sair.
+- Aba Avaliações do painel (`station_reviews_tab.dart`) reaproveita o
+  `StationDetailsService`/os modelos de review de `station_details/` (mesma
+  coleção `public_stations/{uid}/reviews`) via um `StationPanelReviewsRepository`
+  próprio — sem duplicar a paginação por cursor. "Denunciar" escreve em
+  `.../reviews/{clientUid}/reports/{reporterUid}` (caminho e rules já
+  existiam, só faltava o código Dart) e não altera a lista exibida.
+- `WeeklyHours.toOpeningPeriods()` converte o horário do painel para o
+  formato de `shared/models/station_hours_status.dart`, usado no badge
+  "aberto/fechado" da prévia — mesmo cálculo da Home/detalhe/favoritos.
 - Foto do posto em `station_cover/` (feature própria, consumida pelo painel e
   pela listagem do motorista): documento `station_covers/{uid}` com JPEG
   base64 comprimido no client (`core/utils/jpeg_compressor.dart`, pacote
@@ -201,8 +246,9 @@ documentação.
 
 ## Ainda não existe / próximos passos típicos
 
-- Aba **Avaliações** do painel do posto — hoje placeholder (as abas
-  Informações e Horários já foram implementadas).
+- Admin ainda não lê `station_reports`/os `reports` de review denunciados
+  (painel de admin em si não existe) — a denúncia é gravada, mas não há
+  onde revisá-la no app ainda.
 - **Deploy de rules NÃO é automático** — não existe `.github/workflows/`.
   Depois de mergear mudança em `firestore.rules`, rodar
   `firebase deploy --only firestore:rules --project tcc-completai` na mão
