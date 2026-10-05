@@ -290,12 +290,24 @@ test('dono remove a própria foto; terceiro não', async () => {
   await assertSucceeds(deleteDoc(doc(database('station'), 'station_covers/station')));
 });
 
-test('dados privados só podem ser lidos pelo dono, nem admin tem exceção', async () => {
+// A garantia aqui MUDOU de proposito. Antes era "nem admin le dado privado".
+// A tela de admin precisa conferir CNPJ/e-mail/telefone para aprovar um posto
+// novo, e o Felipe decidiu abrir esse acesso. O que continua valendo: terceiro
+// comum e anonimo nao leem, e admin NAO escreve. Ver ADMIN.md.
+test('dado privado: dono e admin leem; terceiro e anônimo não', async () => {
   await seed(['gas_stations/station', station('station')]);
   await assertSucceeds(getDoc(doc(database('station'), 'gas_stations/station')));
-  for (const db of [database(), database('alice'), database('admin', { admin: true })]) {
+  await assertSucceeds(getDoc(doc(database('admin', { admin: true }), 'gas_stations/station')));
+  for (const db of [database(), database('alice'), database('bob', { admin: false })]) {
     await assertFails(getDoc(doc(db, 'gas_stations/station')));
   }
+});
+
+test('admin lê dado privado do posto mas não escreve nele', async () => {
+  await seed(['gas_stations/station', station('station')]);
+  const db = database('admin', { admin: true });
+  await assertFails(updateDoc(doc(db, 'gas_stations/station'), { phone: '(17) 90000-0000' }));
+  await assertFails(deleteDoc(doc(db, 'gas_stations/station')));
 });
 
 // Histórico usa o mesmo formato de consulta da feature Flutter.
@@ -321,4 +333,195 @@ test('histórico nega consulta anônima, sem filtro ou pelo autor de outra conta
   await assertFails(getDocs(query(collectionGroup(database(), 'reviews'), where('clientUid', '==', 'alice'))));
   await assertFails(getDocs(collectionGroup(database('alice'), 'reviews')));
   await assertFails(getDocs(query(collectionGroup(database('bob'), 'reviews'), where('clientUid', '==', 'alice'))));
+});
+
+// ---------- Tela de admin: aprovação de posto ----------
+
+test('posto novo nasce pending; dono não escolhe o status', async () => {
+  await seed(['gas_stations/station', station('station')]);
+  const ref = doc(database('station'), 'public_stations/station');
+  await assertSucceeds(setDoc(ref, publicStation('station')));
+  for (const status of ['approved', 'rejected']) {
+    await assertFails(setDoc(ref, { ...publicStation('station'), status }));
+  }
+});
+
+test('dono não aprova o próprio posto', async () => {
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', publicStation('station')]);
+  const ref = doc(database('station'), 'public_stations/station');
+  await assertFails(updateDoc(ref, { status: 'approved' }));
+  // Nem escondido junto de uma edição legítima.
+  await assertFails(updateDoc(ref, { brandName: 'Outro nome', status: 'approved' }));
+  // Edição legítima sem tocar no status continua passando.
+  await assertSucceeds(updateDoc(ref, { brandName: 'Outro nome' }));
+});
+
+test('admin aprova e recusa, alterando somente o status', async () => {
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', publicStation('station')]);
+  const ref = doc(database('admin', { admin: true }), 'public_stations/station');
+  await assertSucceeds(updateDoc(ref, { status: 'approved' }));
+  await assertSucceeds(updateDoc(ref, { status: 'rejected' }));
+  await assertFails(updateDoc(ref, { status: 'qualquer_coisa' }));
+  // Admin não usa a aprovação como porta para mexer em preço ou endereço.
+  await assertFails(updateDoc(ref, { status: 'approved', 'prices.ethanol': 1.5 }));
+  await assertFails(updateDoc(ref, { brandName: 'Renomeado pelo admin' }));
+});
+
+test('não admin não muda status de posto alheio', async () => {
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', publicStation('station')]);
+  for (const db of [database(), database('alice'), database('bob', { admin: false })]) {
+    await assertFails(updateDoc(doc(db, 'public_stations/station'), { status: 'approved' }));
+  }
+});
+
+test('posto antigo sem status continua editável pelo dono', async () => {
+  const legado = publicStation('station');
+  delete legado.status;
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', legado]);
+  const ref = doc(database('station'), 'public_stations/station');
+  await assertSucceeds(updateDoc(ref, { brandName: 'Nome novo' }));
+  // Mas não pode se autoaprovar aproveitando a ausência do campo.
+  await assertFails(updateDoc(ref, { status: 'approved' }));
+});
+
+// ---------- Tela de admin: denúncias de avaliação ----------
+
+test('motivo da denúncia vem de lista fechada', async () => {
+  const db = database('alice');
+  // Um caminho por assercao: reescrever o mesmo documento seria `update`,
+  // que so admin pode, e o teste mediria a regra errada.
+  const path = (i) => `public_stations/s${i}/reviews/bob/reports/alice`;
+  const validos = ['offensive', 'fake', 'off_topic', 'spam', 'personal_data', 'other'];
+  for (const [i, reason] of validos.entries()) {
+    await assertSucceeds(setDoc(doc(db, path(`ok${i}`)), { ...report('alice'), reason }));
+  }
+  const invalidos = ['texto livre qualquer', '', 'OFFENSIVE', 7];
+  for (const [i, reason] of invalidos.entries()) {
+    await assertFails(setDoc(doc(db, path(`no${i}`)), { ...report('alice'), reason }));
+  }
+});
+
+test('denúncia não pode declarar outro reporterUid', async () => {
+  const path = 'public_stations/station/reviews/bob/reports/alice';
+  await assertFails(setDoc(doc(database('alice'), path), { ...report('bob') }));
+});
+
+test('admin lista denúncias por collectionGroup; mais ninguém', async () => {
+  await seed(
+    ['public_stations/a/reviews/bob/reports/alice', report('alice')],
+    ['public_stations/b/reviews/carol/reports/alice', report('alice')],
+  );
+  const snapshot = await assertSucceeds(getDocs(collectionGroup(database('admin', { admin: true }), 'reports')));
+  assert.equal(snapshot.size, 2);
+  for (const db of [database(), database('alice'), database('bob', { admin: false })]) {
+    await assertFails(getDocs(collectionGroup(db, 'reports')));
+  }
+});
+
+test('admin apaga avaliação denunciada e corrige os agregados', async () => {
+  await seed(
+    ['gas_stations/station', station('station')],
+    ['public_stations/station', { ...publicStation('station'), averageRating: 4, reviewCount: 2 }],
+    ['public_stations/station/reviews/bob', review('bob')],
+  );
+  const db = database('admin', { admin: true });
+  await assertSucceeds(deleteDoc(doc(db, 'public_stations/station/reviews/bob')));
+  await assertSucceeds(updateDoc(doc(db, 'public_stations/station'), { averageRating: 5, reviewCount: 1 }));
+});
+
+test('não admin não apaga avaliação de terceiro', async () => {
+  await seed(['public_stations/station/reviews/bob', review('bob')]);
+  for (const db of [database(), database('alice'), database('station')]) {
+    await assertFails(deleteDoc(doc(db, 'public_stations/station/reviews/bob')));
+  }
+  // O autor continua podendo apagar a própria.
+  await assertSucceeds(deleteDoc(doc(database('bob'), 'public_stations/station/reviews/bob')));
+});
+
+// ---------- Avaliacao unica ----------
+
+test('cliente avalia uma vez e não reescreve a própria avaliação', async () => {
+  const ref = doc(database('alice'), 'public_stations/station/reviews/alice');
+  await assertSucceeds(setDoc(ref, review('alice', 5)));
+  // A segunda escrita no mesmo caminho e um update -- agora negado.
+  await assertFails(setDoc(ref, review('alice', 1)));
+  await assertFails(updateDoc(ref, { rating: 1 }));
+  await assertFails(updateDoc(ref, { comment: 'mudei de ideia' }));
+});
+
+test('dono do posto não reescreve avaliação de cliente', async () => {
+  await seed(['public_stations/station/reviews/alice', review('alice')]);
+  await assertFails(updateDoc(doc(database('station'), 'public_stations/station/reviews/alice'), { rating: 5 }));
+});
+
+test('cliente continua podendo apagar a própria avaliação', async () => {
+  await seed(['public_stations/station/reviews/alice', review('alice')]);
+  await assertSucceeds(deleteDoc(doc(database('alice'), 'public_stations/station/reviews/alice')));
+});
+
+// ---------- Redenuncia ----------
+
+test('posto pode denunciar de novo o mesmo cliente', async () => {
+  const path = 'public_stations/station/reviews/bob/reports/station';
+  const db = database('station');
+  // O id do documento e o uid de quem denuncia: a segunda denuncia cai no
+  // mesmo caminho e vira update. Tem que passar.
+  await assertSucceeds(setDoc(doc(db, path), report('station')));
+  await assertSucceeds(setDoc(doc(db, path), { ...report('station'), reason: 'spam' }));
+});
+
+test('quem denuncia não decide o próprio veredito', async () => {
+  const path = 'public_stations/station/reviews/bob/reports/station';
+  await seed([path, report('station')]);
+  const db = database('station');
+  for (const status of ['resolved', 'dismissed']) {
+    await assertFails(setDoc(doc(db, path), { ...report('station'), status }));
+    await assertFails(updateDoc(doc(db, path), { status }));
+  }
+});
+
+test('redenúncia reabre: admin resolveu, posto denuncia de novo', async () => {
+  const path = 'public_stations/station/reviews/bob/reports/station';
+  await seed([path, { ...report('station'), status: 'resolved' }]);
+  await assertSucceeds(setDoc(doc(database('station'), path), report('station')));
+});
+
+test('terceiro não denuncia em nome do posto', async () => {
+  const path = 'public_stations/station/reviews/bob/reports/station';
+  await assertFails(setDoc(doc(database('alice'), path), report('station')));
+});
+
+// ---------- Posto legado consegue editar? ----------
+// Documento como os cadastrados antes de street/number/cep/status existirem.
+const postoLegado = (uid) => {
+  const d = publicStation(uid);
+  delete d.street; delete d.number; delete d.cep; delete d.status;
+  return d;
+};
+
+test('posto legado salva horários', async () => {
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', postoLegado('station')]);
+  await assertSucceeds(updateDoc(doc(database('station'), 'public_stations/station'), {
+    openingHours: {
+      monday: { open: '08:00', close: '23:00' }, tuesday: { open: '08:00', close: '23:00' },
+      wednesday: { open: '08:00', close: '23:00' }, thursday: { open: '08:00', close: '23:00' },
+      friday: { open: '08:00', close: '23:00' }, saturday: { open: '08:00', close: '23:00' },
+      sunday: { open: '08:00', close: '23:00' },
+    },
+  }));
+});
+
+test('posto legado salva preço e serviços', async () => {
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', postoLegado('station')]);
+  const ref = doc(database('station'), 'public_stations/station');
+  await assertSucceeds(updateDoc(ref, { 'prices.ethanol': 4.19, pricesUpdatedAt: Timestamp.fromMillis(1700000000000) }));
+  await assertSucceeds(updateDoc(ref, { services: ['calibragem'] }));
+});
+
+test('posto com CEP mascarado no banco não consegue salvar nada', async () => {
+  // Diagnostico: se algum documento tiver '14700-000' em vez de '14700000',
+  // a regra de formato derruba TODA escrita do dono, nao so a do endereco.
+  const comMascara = { ...publicStation('station'), cep: '14700-000' };
+  await seed(['gas_stations/station', station('station')], ['public_stations/station', comMascara]);
+  await assertFails(updateDoc(doc(database('station'), 'public_stations/station'), { brandName: 'Outro' }));
 });

@@ -158,8 +158,16 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(1), '100');
     await tester.enterText(find.byType(TextFormField).at(2), '14700000');
     await tester.enterText(find.byType(TextFormField).at(3), 'Centro');
-    await tester.tap(find.text('Finalizar Cadastro'));
+
+    // O formulario cresceu (rua, numero, CEP, bairro + cidade travada) e o
+    // botao fica abaixo da dobra no tamanho padrao do teste.
+    await tester.ensureVisible(find.text('Finalizar Cadastro'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Finalizar Cadastro'));
+    // O fluxo de sucesso mostra um SnackBar, cujo timer de auto-dispensa
+    // continua pendente e derruba o teste no teardown. Avancar o tempo
+    // virtual alem da duracao do SnackBar drena esse timer.
+    await tester.pumpAndSettle(const Duration(seconds: 6));
 
     expect(auth.captured?.city, ServiceArea.primaryCity);
     expect(auth.captured?.street, 'Rua Sete');
@@ -188,14 +196,26 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text(ServiceArea.primaryCity), findsOneWidget);
-    expect(find.text('Campinas'), findsNothing);
-
+    // Digita ANTES de rolar: o perfil e um ListView e, depois de rolar, os
+    // campos do topo saem da arvore — o indice 2 passaria a ser outro campo.
     // nome(0), celular(1), rua(2), número(3), CEP(4), bairro(5)
     await tester.enterText(find.byType(TextFormField).at(2), 'Rua Nova');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Salvar alterações'));
+
+    // Item fora da tela nem entra na arvore do ListView, entao rolar ate a
+    // cidade e parte da assercao, nao conveniencia.
+    await tester.scrollUntilVisible(
+      find.text(ServiceArea.primaryCity),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text(ServiceArea.primaryCity), findsOneWidget);
+    expect(find.text('Campinas'), findsNothing);
+
+    await tester.ensureVisible(find.text('Salvar alterações'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Salvar alterações'));
+    await tester.pumpAndSettle(const Duration(seconds: 6));
 
     expect(panel.savedCity, ServiceArea.primaryCity);
   });

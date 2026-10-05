@@ -10,6 +10,7 @@ import 'package:completai/features/station_panel/domain/repositories/station_pan
 import 'package:completai/features/station_panel/presentation/providers/station_panel_reviews_providers.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:completai/shared/models/report_reason.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _stationUid = 'station-1';
@@ -56,7 +57,7 @@ void main() {
       await repository.reportReview(
         stationUid: _stationUid,
         clientUid: 'client-1',
-        reason: 'Comentário ofensivo.',
+        reason: ReportReason.offensive.wireValue,
       );
 
       final report = await firestore
@@ -76,11 +77,14 @@ void main() {
         uidProvider: () => null,
       );
 
+      // `_requireUid()` roda FORA do guardInfra e `reportReview` nao e
+      // `async`, entao a excecao sai de forma sincrona na hora da chamada.
+      // Passar o Future pronto faria a excecao escapar antes do matcher.
       await expectLater(
-        repository.reportReview(
+        () => repository.reportReview(
           stationUid: _stationUid,
           clientUid: 'client-1',
-          reason: 'motivo',
+          reason: ReportReason.fake.wireValue,
         ),
         throwsA(isA<UnauthenticatedException>()),
       );
@@ -130,22 +134,22 @@ void main() {
 
       final error = await container
           .read(provider.notifier)
-          .reportReview(state.reviews.single, 'motivo');
+          .reportReview(state.reviews.single, ReportReason.offensive.wireValue);
 
       expect(error, isNull);
-      expect(repository.reportedReason, 'motivo');
+      expect(repository.reportedReason, 'offensive');
     });
 
     test('reportReview devolve a mensagem da falha, sem quebrar a lista', () async {
       final provider = stationPanelReviewsViewModelProvider(_stationUid);
       final state = await container.read(provider.future);
-      repository.reportFailure = const ValidationFailure('Descreva o motivo.');
+      repository.reportFailure = const ValidationFailure('Motivo inválido.');
 
       final error = await container
           .read(provider.notifier)
-          .reportReview(state.reviews.single, '');
+          .reportReview(state.reviews.single, ReportReason.spam.wireValue);
 
-      expect(error, 'Descreva o motivo.');
+      expect(error, 'Motivo inválido.');
       expect(container.read(provider).hasValue, isTrue);
     });
 

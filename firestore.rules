@@ -39,6 +39,16 @@ service cloud.firestore {
       ).data.type == 'gas_station';
     }
 
+    // Denuncia de avaliacao: autor declarado bate com o dono do documento e
+    // motivo vem da lista fechada do app.
+    function validReport(data, reporterUid) {
+      return data.reporterUid == reporterUid
+        && data.reason in [
+             'offensive', 'fake', 'off_topic',
+             'spam', 'personal_data', 'other'
+           ];
+    }
+
     // Formato público consumido pelos clientes. Mesmo intervalo do formulário.
     function validFuelPrice(value) {
       return value == null || (value is number && value >= 0.01 && value <= 99.999);
@@ -98,6 +108,22 @@ service cloud.firestore {
         && data.tags is list && data.tags.size() <= 20;
     }
 
+    // Denuncias via collectionGroup, para a tela de admin. Sem esta regra
+    // uma query `collectionGroup('reports')` e negada e o admin so consegue
+    // ler uma denuncia por vez, sabendo o caminho exato -- ou seja, nao
+    // consegue descobrir que existe denuncia nova.
+    //
+    // Pega as duas colecoes chamadas `reports` (denuncia de posto e de
+    // avaliacao). O app distingue pelo caminho do documento, nao por campo:
+    // quem esta sob `reviews/` e denuncia de avaliacao. Isso evita campo
+    // redundante e indice extra.
+    //
+    // Concede somente `list`. Ler um documento especifico continua regido
+    // pelas regras de cada caminho (que tambem exigem admin).
+    match /{path=**}/reports/{reportId} {
+      allow list: if isAdmin();
+    }
+
     // Histórico pessoal via collectionGroup: consulta limitada ao autor.
     // Reviews de um posto continuam públicas; isto não concede escrita.
     match /{path=**}/reviews/{reviewId} {
@@ -121,7 +147,12 @@ service cloud.firestore {
 
     // ---------- gas_stations (privado, dados sensíveis) ----------
     match /gas_stations/{uid} {
-      allow read: if isOwner(uid);
+      // MUDANCA DELIBERADA (tela de admin): o admin precisa conferir CNPJ,
+      // e-mail e telefone para aprovar um posto novo. Antes esta colecao era
+      // ilegivel para todos menos o dono, inclusive para admin, e havia um
+      // teste garantindo isso. A garantia foi trocada a pedido explicito:
+      // admin le, terceiro continua sem ler. Ver ADMIN.md.
+      allow read: if isOwner(uid) || isAdmin();
       allow create: if isOwner(uid)
                     && request.resource.data.type == 'gas_station'
                     && canBecomeStation(uid);
@@ -134,9 +165,12 @@ service cloud.firestore {
       allow read: if true;
 
       // Dono do posto: pode alterar qualquer campo (preços, horários, etc.)
+      // Posto novo nasce pendente de aprovacao. O dono NAO escolhe o
+      // status; so o admin muda depois (caso 3 do update).
       allow create: if isOwner(uid)
                     && hasStationRoleAfter(uid)
                     && validPublicStation(request.resource.data)
+                    && request.resource.data.status == 'pending'
                     && request.resource.data.state == 'SP'
                     && request.resource.data.city is string
                     && request.resource.data.citySearchKey is string
@@ -150,6 +184,10 @@ service cloud.firestore {
         (isOwner(uid)
           && hasStationRoleAfter(uid)
           && validPublicStation(request.resource.data)
+          // Sem isto o dono se aprovaria sozinho: o caso 1 libera qualquer
+          // campo do proprio documento. `get` com padrao aceita documento
+          // antigo, que nao tem o campo.
+          && request.resource.data.get('status', '') == resource.data.get('status', '')
           && request.resource.data.state == 'SP'
           && request.resource.data.city is string
           && request.resource.data.citySearchKey is string
@@ -174,7 +212,14 @@ service cloud.firestore {
           && request.resource.data.averageRating >= 0
           && request.resource.data.averageRating <= 5
           && request.resource.data.reviewCount >= 0
-          && request.resource.data.reviewCount <= resource.data.reviewCount + 1);
+          && request.resource.data.reviewCount <= resource.data.reviewCount + 1)
+        ||
+        // Caso 3: admin aprova ou recusa o posto. Altera SOMENTE `status`,
+        // nenhum outro campo -- nem preco, nem endereco, nem agregado.
+        (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['status'])
+          && request.resource.data.status in ['pending', 'approved', 'rejected']);
 
       allow delete: if isOwner(uid);
 
@@ -183,17 +228,45 @@ service cloud.firestore {
         allow create: if isOwner(clientUid)
                       && request.resource.data.rating >= 1
                       && request.resource.data.rating <= 5;
-        allow update: if isOwner(clientUid)
-                      && request.resource.data.rating >= 1
-                      && request.resource.data.rating <= 5;
-        allow delete: if isOwner(clientUid);
+
+        // Avaliacao e UNICA e definitiva: o cliente escreve uma vez e nao
+        // reescreve. O id do documento ja era o uid dele, entao nunca houve
+        // duplicata -- o que mudou e que a primeira agora e a final.
+        // Sem esta regra o client podia trocar a nota depois, e o agregado
+        // do posto era recalculado a cada troca.
+        allow update: if false;
+        // Admin apaga review denunciada (tela de admin). Corrigir
+        // averageRating/reviewCount depois NAO exigiu regra nova: o caso 2
+        // do update de public_stations ja permite diminuir reviewCount.
+        allow delete: if isOwner(clientUid) || isAdmin();
 
         // CORRIGIDO: caminho tinha número ímpar de segmentos (inválido).
         // Agora: public_stations/{uid}/reviews/{clientUid}/reports/{reporterUid}
         match /reports/{reporterUid} {
           allow read: if isAdmin();
-          allow create: if isOwner(reporterUid);
-          allow update: if isAdmin();
+
+          // Motivo vem de lista fechada (o app mostra opcoes, nao campo
+          // livre). Antes `create` nao validava nada: qualquer string
+          // passava. Mantem os valores em sincronia com o enum
+          // `ReportReason` de shared/models/report_reason.dart.
+          allow create: if isOwner(reporterUid)
+                        && validReport(request.resource.data, reporterUid)
+                        && request.resource.data.status == 'pending';
+
+          // O id do documento e o uid de quem denuncia, entao denunciar de
+          // novo a avaliacao do MESMO cliente cai no mesmo caminho e vira
+          // `update`. Isso e legitimo: a avaliacao anterior pode ter sido
+          // removida e o cliente ter escrito outra. Sem esta regra o posto
+          // ficava travado em cima da propria denuncia antiga.
+          //
+          // O que ele NAO pode e mexer no veredito: ao redenunciar, `status`
+          // so pode voltar para 'pending'. Marcar a propria denuncia como
+          // resolvida esconderia ela do admin.
+          allow update: if isAdmin()
+                        || (isOwner(reporterUid)
+                            && validReport(request.resource.data, reporterUid)
+                            && request.resource.data.status == 'pending');
+
           allow delete: if isAdmin();
         }
       }

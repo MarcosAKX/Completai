@@ -93,8 +93,20 @@ class ClientProfilePage extends ConsumerWidget {
                     ),
                   ),
                   data: (profile) => SafeArea(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(AppSpacing.md),
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        // Recarrega sessão e perfil: o nome da saudação vem
+                        // da sessão, os cards vêm do perfil.
+                        ref.invalidate(clientProfileViewModelProvider(uid));
+                        await ref.read(
+                          clientProfileViewModelProvider(uid).future,
+                        );
+                      },
+                      child: SingleChildScrollView(
+                        // Precisa rolar sempre, senão o gesto não dispara em
+                        // tela curta.
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(AppSpacing.md),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -165,7 +177,8 @@ class ClientProfilePage extends ConsumerWidget {
                               color: AppColors.textSecondary,
                             ),
                           ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

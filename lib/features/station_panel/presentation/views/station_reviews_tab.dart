@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/widgets/app_text_field.dart';
 import '../../../station_details/domain/models/station_review.dart';
 import '../../../station_details/presentation/widgets/station_details_error.dart';
 import '../../../station_details/presentation/widgets/station_review_card.dart';
 import '../providers/station_panel_providers.dart';
 import '../providers/station_panel_reviews_providers.dart';
+import '../widgets/report_reason_picker.dart';
 import '../widgets/station_panel_placeholder_tab.dart';
 import '../widgets/station_panel_section_header.dart';
 
@@ -30,7 +30,14 @@ class StationReviewsTab extends ConsumerWidget {
         message: error.toString(),
         onRetry: () => ref.invalidate(provider),
       ),
-      data: (content) => ListView(
+      // Sem método de refresh na ViewModel: invalidar o provider reconstrói a
+      // primeira página, que é o que o gesto deve fazer.
+      data: (content) => RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(provider);
+          await ref.read(provider.future);
+        },
+        child: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           const StationPanelSectionHeader(
@@ -67,7 +74,8 @@ class StationReviewsTab extends ConsumerWidget {
                 ),
               ),
           ],
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -97,58 +105,19 @@ class _ReviewWithReport extends ConsumerWidget {
   );
 
   Future<void> _report(BuildContext context, WidgetRef ref) async {
-    final reason = await showDialog<String>(
-      context: context,
-      builder: (_) => _ReportReasonDialog(clientName: review.clientName),
+    final reason = await ReportReasonPicker.show(
+      context,
+      clientName: review.clientName,
     );
-    if (reason == null || reason.trim().isEmpty) return;
+    if (reason == null) return;
 
     final notifier = ref.read(
       stationPanelReviewsViewModelProvider(stationUid).notifier,
     );
-    final error = await notifier.reportReview(review, reason.trim());
+    final error = await notifier.reportReview(review, reason.wireValue);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(error ?? 'Denúncia enviada para análise.')),
     );
   }
-}
-
-class _ReportReasonDialog extends StatefulWidget {
-  const _ReportReasonDialog({required this.clientName});
-
-  final String clientName;
-
-  @override
-  State<_ReportReasonDialog> createState() => _ReportReasonDialogState();
-}
-
-class _ReportReasonDialogState extends State<_ReportReasonDialog> {
-  final _reason = TextEditingController();
-
-  @override
-  void dispose() {
-    _reason.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text('Denunciar avaliação de ${widget.clientName}'),
-    content: AppTextField(
-      label: 'Motivo',
-      controller: _reason,
-      hintText: 'Ex: linguagem ofensiva, avaliação falsa...',
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cancelar'),
-      ),
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(_reason.text),
-        child: const Text('Enviar'),
-      ),
-    ],
-  );
 }
