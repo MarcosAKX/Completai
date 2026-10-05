@@ -121,6 +121,7 @@ class StationDetailsPage extends ConsumerWidget {
                                   ),
                                 ),
                               ),
+                        hasReviewed: content.hasReviewed,
                         onReview: () => _review(context, viewModel),
                       ),
                     ],

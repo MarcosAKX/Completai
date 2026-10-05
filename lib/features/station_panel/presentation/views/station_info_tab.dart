@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../domain/station_service_options.dart';
 import '../providers/station_panel_providers.dart';
+import '../widgets/panel_refresh.dart';
 import '../widgets/station_panel_section_header.dart';
 import '../widgets/station_tag_input.dart';
 
@@ -27,6 +28,10 @@ class _StationInfoTabState extends ConsumerState<StationInfoTab> {
   @override
   void initState() {
     super.initState();
+    _seed();
+  }
+
+  void _seed() {
     final profile = ref.read(stationPanelViewModelProvider).requireValue;
     _services = profile.services.toSet();
     _tags = List.of(profile.tags);
@@ -65,7 +70,10 @@ class _StationInfoTabState extends ConsumerState<StationInfoTab> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return PanelRefresh(
+      hasUnsavedChanges: () => _dirty,
+      onReloaded: () => setState(_seed),
+      child: ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
         const StationPanelSectionHeader(
@@ -113,8 +121,9 @@ class _StationInfoTabState extends ConsumerState<StationInfoTab> {
           '${_services.length}/$kMaxStationServices serviços · '
           '${_tags.length}/$kMaxStationTags marcadores',
           style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }

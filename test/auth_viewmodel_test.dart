@@ -197,7 +197,13 @@ void main() {
           phone: '17999999999',
         );
 
-    expect(repository.accountCreations, 1);
+    // DUAS criacoes, de proposito: quando o perfil falha, a conta Auth
+    // recem-criada e DESCARTADA (`discardIncompleteAccount`) para nao deixar
+    // credencial orfa travando o retry com "e-mail ja existe". Logo a segunda
+    // tentativa cria de novo. A expectativa anterior era 1, escrita supondo
+    // que a conta fosse reaproveitada — contradizia o proprio design.
+    expect(repository.accountCreations, 2);
+    expect(repository.discardCalls, 1);
     expect(repository.clientProfileAttempts, 2);
     expect(container.read(registrationProvider).requireValue, isTrue);
     expect(container.read(sessionProvider).requireValue, isNull);

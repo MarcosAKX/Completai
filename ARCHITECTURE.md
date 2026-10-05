@@ -71,7 +71,11 @@ lib/
 > `shared/models/station_brand.dart` (bandeira do posto — usada pela
 > listagem do motorista e pelo painel do dono),
 > `shared/models/service_area.dart` (cidade atendida no MVP — usada pelo
-> seletor da home, pelo cadastro do posto e pelo perfil do posto) e
+> seletor da home, pelo cadastro do posto e pelo perfil do posto),
+> `shared/models/station_approval_status.dart` (fila de aprovação — usada pelo
+> admin, pelo cadastro e pelo filtro de visibilidade do motorista),
+> `shared/models/report_reason.dart` (motivos de denúncia — usados pelo painel
+> do posto, pelo admin e validados nas rules) e
 > `shared/services/address_geocoding_service.dart` (geocodificação de
 > endereço — usada no cadastro e na edição de endereço do posto).
 
@@ -129,17 +133,28 @@ simultaneamente. Ver `firestore.rules`, função `noConflictingRole`. Toda
 Service de cadastro deve validar isso também no client antes de escrever
 (defesa em profundidade — rules são a garantia real, client é UX).
 
-## 7.1 Feature `admin/` (painel de denúncias)
+## 7.1 Feature `admin/` (implementada)
 
 - Papel de admin vem de custom claim (`admin: true`), nunca de documento
   Firestore. Ver `ADMIN.md` para o mecanismo de concessão (script local,
-  sem Cloud Functions).
-- `AdminViewModel` deve checar
-  `FirebaseAuth.instance.currentUser?.getIdTokenResult()` antes de tentar
-  ler `station_reports`/`reports` — trate como UX (evitar erro de permissão
-  feio na tela); a segurança real está nas `firestore.rules`.
-- Estrutura da feature segue o mesmo padrão MVVM das demais:
-  `features/admin/{data,domain,presentation}`.
+  sem Cloud Functions) e para o detalhe das rules.
+- `AuthGate` checa `session.isAdmin` **antes** de `needsProfile`: a conta de
+  admin não tem documento em `users/` nem em `gas_stations/`, então sem essa
+  ordem ela cai na escolha de papel e fica presa.
+- Três abas: **Pendentes** (fila de aprovação), **Postos listados** (revisados,
+  decisão reversível) e **Denúncias** (de avaliação, com o texto denunciado).
+- Dois services, um por responsabilidade: `AdminStationsService` (fila e
+  `status`) e `AdminReportsService` (collection group e remoção de review).
+  Um único Repository os une atrás da interface de domínio.
+- A segurança real está nas `firestore.rules`; a checagem de claim no client é
+  só para não mostrar erro de permissão feio.
+
+### Constantes que saíram de `admin/` para `shared/`
+
+`StationApprovalStatus` e `ReportReason` nasceram em `admin/domain/models/`
+e foram movidos para `shared/models/` ao serem usados por três features
+(admin, auth no cadastro, station_discovery/station_details no filtro de
+visibilidade e no painel do posto). Mesmo critério da seção 2.
 
 ## 8. Checklist antes de considerar uma tela "pronta"
 

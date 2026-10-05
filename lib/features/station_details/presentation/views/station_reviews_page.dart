@@ -27,9 +27,20 @@ class StationReviewsPage extends ConsumerWidget {
           message: error.toString(),
           onRetry: () => ref.invalidate(provider),
         ),
-        data: (content) => content.reviews.isEmpty
-            ? const Center(child: Text('Este posto ainda não tem avaliações.'))
-            : ListView.builder(
+        data: (content) => RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(provider);
+            await ref.read(provider.future);
+          },
+          // Lista vazia também precisa rolar, senão o gesto não dispara.
+          child: content.reviews.isEmpty
+              ? ListView(
+                  children: const [
+                    SizedBox(height: 160),
+                    Center(child: Text('Este posto ainda não tem avaliações.')),
+                  ],
+                )
+              : ListView.builder(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 itemCount: content.reviews.length + (content.hasMore ? 1 : 0),
                 itemBuilder: (context, index) {
@@ -53,7 +64,8 @@ class StationReviewsPage extends ConsumerWidget {
                     ),
                   );
                 },
-              ),
+                ),
+        ),
       ),
     );
   }

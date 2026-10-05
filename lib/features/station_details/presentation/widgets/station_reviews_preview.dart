@@ -15,6 +15,7 @@ class StationReviewsPreview extends StatelessWidget {
     required this.reviews,
     required this.onReview,
     required this.onSeeAll,
+    this.hasReviewed = false,
     super.key,
   });
 
@@ -23,6 +24,9 @@ class StationReviewsPreview extends StatelessWidget {
   final List<StationReview> reviews;
   final VoidCallback onReview;
   final VoidCallback? onSeeAll;
+
+  /// Já avaliou: o botão vira aviso. Avaliação é única e não se edita.
+  final bool hasReviewed;
 
   @override
   Widget build(BuildContext context) => StationDetailsSection(
@@ -62,10 +66,42 @@ class StationReviewsPreview extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         SizedBox(
           width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: onReview,
-            icon: const Icon(Icons.star_outline_rounded),
-            label: const Text('Avaliar posto'),
+          child: hasReviewed
+              ? const _AlreadyReviewed()
+              : OutlinedButton.icon(
+                  onPressed: onReview,
+                  icon: const Icon(Icons.star_outline_rounded),
+                  label: const Text('Avaliar posto'),
+                ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Substitui o botão depois que o cliente avaliou. Não é um botão
+/// desabilitado de propósito: desabilitado sugere "ainda não dá", e aqui
+/// nunca mais vai dar.
+class _AlreadyReviewed extends StatelessWidget {
+  const _AlreadyReviewed();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: AppColors.screenBackground,
+      borderRadius: BorderRadius.circular(AppSpacing.controlRadius),
+      border: Border.all(color: AppColors.outline),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.check_circle_outline, size: 18, color: AppColors.success),
+        const SizedBox(width: AppSpacing.sm),
+        Flexible(
+          child: Text(
+            'Você já avaliou este posto',
+            style: TextStyle(color: AppColors.textSecondary),
           ),
         ),
       ],

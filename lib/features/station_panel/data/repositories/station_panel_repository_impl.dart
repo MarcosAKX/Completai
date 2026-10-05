@@ -18,19 +18,29 @@ class StationPanelRepositoryImpl implements StationPanelRepository {
 
   StationProfile? _cache;
 
+  /// De quem é o cache. Sem isto, entrar com outro posto na mesma execução
+  /// do app devolvia o perfil do anterior — o provider não é autoDispose e
+  /// sobrevive ao logout. O `AuthGate` também descarta este repository na
+  /// troca de conta (`resetUserScopedProviders`); a chave aqui é a garantia
+  /// de que uma conta nunca lê o cache de outra nem que aquilo falhe.
+  String? _cachedUid;
+
   String _requireUid() =>
       uidProvider() ?? (throw const UnauthenticatedException());
 
   @override
   Future<StationProfile> loadProfile({bool forceRefresh = false}) async {
     final cached = _cache;
-    if (!forceRefresh && cached != null) return cached;
+    if (!forceRefresh && cached != null && _cachedUid == uidProvider()) {
+      return cached;
+    }
     return _reload();
   }
 
   Future<StationProfile> _reload() async {
     final uid = _requireUid();
     final profile = await guardInfra(() => _service.read(uid));
+    _cachedUid = uid;
     return _cache = profile;
   }
 

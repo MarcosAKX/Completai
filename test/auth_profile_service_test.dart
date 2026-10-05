@@ -184,7 +184,11 @@ void main() {
       'reviewCount',
       'services',
       'tags',
+      'status',
     });
+
+    // Posto novo entra na fila do admin, não direto na listagem.
+    expect(public['status'], 'pending');
 
     // A linha exibida é composta; o CEP é gravado só com dígitos.
     expect(public['address'], 'Rua Teste, 100');
