@@ -20,24 +20,44 @@ class StationDetailsRepositoryImpl implements StationDetailsRepository {
   final String? Function() uidProvider;
   final Map<String, StationDetailsState> _cache = {};
 
+  /// De qual conta é o cache. `isFavorite` e `hasReviewed` são do usuário,
+  /// não do posto — a chave do mapa só tem o posto, então sem isto entrar
+  /// com outra conta mostrava o coração e o "já avaliei" do anterior.
+  String? _cachedUid;
+
+  /// Zera o cache quando a conta muda, antes de qualquer leitura.
+  void _guardAccount() {
+    final uid = uidProvider();
+    if (_cachedUid != uid) {
+      _cache.clear();
+      _cachedUid = uid;
+    }
+  }
+
   @override
   Future<StationDetailsState> load(
     String stationUid, {
     bool forceRefresh = false,
   }) async {
+    _guardAccount();
     final cached = _cache[stationUid];
     if (!forceRefresh && cached != null) return cached;
     return guardInfra(() async {
       final details = await _service.readStation(stationUid);
       final reviews = await _service.readReviews(stationUid, limit: 3);
       final uid = uidProvider();
-      final favorite = uid == null
-          ? false
-          : await _service.isFavorite(uid, stationUid);
+      // Visitante sem conta não avalia nem favorita; evita duas leituras.
+      final (favorite, reviewed) = uid == null
+          ? (false, false)
+          : (
+              await _service.isFavorite(uid, stationUid),
+              await _service.hasReviewed(stationUid, uid),
+            );
       return _cache[stationUid] = StationDetailsState(
         details: details,
         reviews: reviews,
         isFavorite: favorite,
+        hasReviewed: reviewed,
       );
     });
   }

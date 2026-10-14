@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../shared/services/address_geocoding_service.dart';
+import '../../../../shared/models/station_approval_status.dart';
 import '../../domain/models/auth_session.dart';
 import '../../domain/models/station_registration.dart';
 
@@ -183,6 +184,10 @@ class AuthProfileService {
           'saturday': null,
           'sunday': null,
         },
+        // Nasce pendente: só aparece para o motorista depois que o admin
+        // aprovar na tela de administração. As rules recusam qualquer outro
+        // valor vindo do dono.
+        'status': StationApprovalStatus.pending.wireValue,
         'averageRating': 0.0,
         'reviewCount': 0,
         'services': <String>[],

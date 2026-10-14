@@ -7,6 +7,7 @@ import '../../../../core/utils/money.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../domain/models/station_fuel.dart';
 import '../providers/station_panel_providers.dart';
+import '../widgets/panel_refresh.dart';
 import '../widgets/station_client_preview_card.dart';
 import '../widgets/station_panel_section_header.dart';
 import '../widgets/station_price_field.dart';
@@ -92,7 +93,14 @@ class _StationPricesTabState extends ConsumerState<StationPricesTab> {
     return Form(
       key: _form,
       onChanged: () => setState(() {}),
-      child: ListView(
+      child: PanelRefresh(
+        hasUnsavedChanges: () => _dirty.isNotEmpty,
+        onReloaded: () => setState(
+          () => _seed(
+            ref.read(stationPanelViewModelProvider).valueOrNull?.prices,
+          ),
+        ),
+        child: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           StationPanelSectionHeader(
@@ -133,7 +141,8 @@ class _StationPricesTabState extends ConsumerState<StationPricesTab> {
             isLoading: _publishing,
             onPressed: dirtyCount == 0 ? null : _publish,
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -63,9 +63,15 @@ void validatePublicStationData(Map<String, dynamic> data) {
   for (final key in ['services', 'tags']) {
     require(data[key] == null || data[key] is List);
   }
+  // `Map` sem parametrizacao de proposito: o `cloud_firestore` devolve mapa
+  // ANINHADO como `Map<Object?, Object?>` no aparelho real, porque o tipo se
+  // perde ao atravessar o canal de plataforma. Com `is Map<String, dynamic>`
+  // aqui, o posto inteiro era considerado invalido e SUMIA da listagem — nao
+  // era so o horario que falhava. O `FakeFirebaseFirestore` devolve o tipo
+  // limpo, entao o teste nunca pegou isso.
   final prices = data['prices'];
-  require(prices == null || prices is Map<String, dynamic>);
-  if (prices is Map<String, dynamic>) {
+  require(prices == null || prices is Map);
+  if (prices is Map) {
     for (final key in _fuelKeys) {
       final price = prices[key];
       require(
@@ -78,14 +84,14 @@ void validatePublicStationData(Map<String, dynamic> data) {
     }
   }
   final hours = data['openingHours'];
-  require(hours == null || hours is Map<String, dynamic>);
-  if (hours is Map<String, dynamic>) {
+  require(hours == null || hours is Map);
+  if (hours is Map) {
     final time = RegExp(r'^([01][0-9]|2[0-3]):[0-5][0-9]$');
     for (final day in _days) {
       final period = hours[day];
       require(
         period == null ||
-            (period is Map<String, dynamic> &&
+            (period is Map &&
                 period['open'] is String &&
                 period['close'] is String &&
                 time.hasMatch(period['open'] as String) &&

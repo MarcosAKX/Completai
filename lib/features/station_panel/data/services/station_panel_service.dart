@@ -35,7 +35,12 @@ class StationPanelService {
       throw const InvalidProfileException();
     }
 
-    final prices = (public['prices'] as Map<String, dynamic>?) ?? const {};
+    // `Map` cru, nao `Map<String, dynamic>`: o `cloud_firestore` devolve mapa
+    // ANINHADO como `Map<Object?, Object?>` no aparelho real. O cast duro
+    // lancava e derrubava a leitura inteira.
+    final prices = public['prices'] is Map
+        ? public['prices'] as Map
+        : const {};
     double? price(String key) {
       final value = prices[key];
       return value is num ? value.toDouble() : null;

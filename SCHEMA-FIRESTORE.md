@@ -57,6 +57,11 @@
   number: string,              // número do imóvel; aceita "S/N", até 10 chars
   cep: string,                 // só dígitos ('' quando não informado); a
                                // máscara é do formulário, não do documento
+  status: string,              // 'pending' | 'approved' | 'rejected'.
+                               // Fila de aprovação do admin. AUSENTE =
+                               // aprovado (posto cadastrado antes do campo).
+                               // Dono grava 'pending' no cadastro e NÃO pode
+                               // alterar depois; só admin muda. Ver ADMIN.md.
   neighborhood: string,       // bairro — ajuda o motorista a localizar o posto
   city: string,                // cidade canônica retornada pela geocodificação
   citySearchKey: string,       // cidade normalizada para consulta (minúscula/sem acento)
@@ -163,10 +168,34 @@ separadas de exclusividade de papel e integridade dos agregados de reviews.
 ```
 {
   reporterUid: string,
-  reason: string,
+  reason: string,              // lista FECHADA, validada nas rules:
+                               // 'offensive' | 'fake' | 'off_topic' |
+                               // 'spam' | 'personal_data' | 'other'.
+                               // Espelha o enum ReportReason em
+                               // lib/shared/models/. Mudar um sem o outro
+                               // faz a denúncia voltar permission-denied.
+  status: string,              // 'pending' | 'resolved' | 'dismissed'.
+                               // AUSENTE = pendente. Escrito SÓ pelo admin:
+                               // quem denuncia não define situação, senão
+                               // poderia esconder a denúncia marcando-a
+                               // como resolvida.
   createdAt: timestamp
 }
 ```
+
+> **Avaliação é única**: `allow update: if false` na review. O id do
+> documento é o uid do cliente, então nunca houve duplicata — o que mudou é
+> que a primeira escrita passou a ser a final. O autor ainda pode apagar a
+> própria; o admin pode remover uma denunciada.
+
+> O admin **lista** as denúncias por `collectionGroup('reports')` — sem isso
+> ele só leria uma por vez sabendo o caminho exato, ou seja, não descobriria
+> que existe denúncia nova. A regra de collection group concede apenas
+> `list`, apenas a admin, e exige o índice correspondente em
+> `firestore.indexes.json`. `uid` do posto e `clientUid` da review saem do
+> **caminho** do documento, não de campos — nada redundante, nenhum índice
+> extra. A mesma regra alcança `station_reports/.../reports`; o app descarta
+> o que não casa o formato de denúncia de review.
 
 ### `station_reports/{stationUid}/reports/{reporterUid}` (denúncia de posto)
 ```
@@ -186,6 +215,13 @@ token do Firebase Auth, atribuída manualmente via script local (ver
 `ADMIN.md`). Isso evita repetir o erro do papel gravável pelo cliente (P0 do
 projeto anterior). As coleções `station_reports` e as subcoleções `reports`
 de review só permitem leitura com `isAdmin() == true` nas rules.
+
+**`gas_stations` passou a ser legível pelo admin** (`isOwner(uid) ||
+isAdmin()`). Era ilegível para todos menos o dono, inclusive admin, e havia
+teste garantindo isso — a garantia foi trocada de propósito para a tela de
+aprovação poder conferir CNPJ. Usuário comum e anônimo continuam sem ler, e o
+admin **não escreve** nessa coleção. Motivo completo em `ADMIN.md`, seção
+"Por que o admin lê dado privado".
 
 ## Regra de exclusividade de papel (mitigação do P0 do projeto anterior)
 

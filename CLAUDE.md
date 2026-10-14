@@ -239,22 +239,85 @@ documentação.
   e área de toque confortável. `core/widgets/station_brand_badge.dart` (selo
   da bandeira) e `core/widgets/station_logo.dart` (quadrado arredondado com a
   foto ou iniciais/ícone de fallback) são usados no painel e na listagem.
-- Estrutura de pastas da feature `admin/` reservada (vazia), aguardando
-  implementação.
+- **Tela de admin em `admin/` (MVVM), três abas**, alcançada pelo `AuthGate`
+  quando `session.isAdmin` — checado **antes** de `needsProfile`, senão a
+  conta de admin (que não tem `users/` nem `gas_stations/`) fica presa na
+  escolha de papel. **Pendentes**: posto novo (`status: 'pending'`) com
+  endereço, CEP, CNPJ, e-mail e telefone para conferência; aprova ou recusa.
+  **Postos listados**: revisados, com a decisão reversível. **Denúncias**:
+  denúncias de avaliação por `collectionGroup('reports')`, com o texto
+  denunciado; "Manter" descarta e "Remover" apaga a avaliação recalculando
+  `averageRating`/`reviewCount` na mesma transação. Dois services separados
+  (`AdminStationsService`, `AdminReportsService`) atrás de um Repository.
+- Remover avaliação denunciada apaga **também as denúncias penduradas nela**:
+  o Firestore não apaga subcoleção junto com o pai, e o id da review é o uid
+  do cliente, então o caminho se repete quando ele avalia de novo — a
+  denúncia órfã grudava na avaliação nova. A leitura ainda descarta avaliação
+  mais recente que a denúncia, como rede para dados antigos.
+- Fila de aprovação: `public_stations/{uid}.status`
+  (`shared/models/station_approval_status.dart`). O dono grava `pending` no
+  cadastro e **não pode alterar** — as rules travam o campo contra ele e
+  liberam só o admin. **Documento sem `status` é tratado como aprovado**, para
+  não fazer desaparecer posto cadastrado antes da fila; por isso o filtro de
+  visibilidade roda em Dart (home, detalhe e lista de favoritos) e não como
+  `where('status','==','approved')`, que não traria documento sem o campo.
+- **Troca de conta descarta o que era da conta anterior.** Os providers de
+  Repository/ViewModel **não são `autoDispose`** e guardam cache em memória,
+  então sobreviviam ao logout: entrar com outro posto abria o painel com o
+  perfil do anterior até puxar para atualizar. Duas defesas, e uma não
+  substitui a outra: `AuthGate` chama `resetUserScopedProviders`
+  (`lib/app/session_scope.dart`) quando o uid muda, o que limpa o estado já
+  carregado nas ViewModels; e os repositories guardam o uid junto do cache
+  (`StationPanelRepositoryImpl._cachedUid`,
+  `StationDetailsRepositoryImpl._guardAccount`), o que impede uma conta de
+  ler o cache de outra mesmo que o reset falhe. No detalhe isso vale também
+  para `isFavorite` e `hasReviewed`, que são do usuário e não do posto, mas
+  moram num cache com chave só do posto. **Provider novo que guarde dado de
+  conta precisa entrar em `session_scope.dart`.**
+- **Avaliação é única e definitiva**: um cliente avalia um posto uma vez e
+  não reescreve. O id do documento sempre foi o uid do cliente (nunca houve
+  duplicata), mas antes a segunda escrita substituía a primeira e recalculava
+  o agregado. Agora `allow update: if false` na review, e `writeReview`
+  recusa dentro da transação (`previous.exists`) — fora dela, dois envios
+  simultâneos passariam os dois. O detalhe carrega `hasReviewed` e troca o
+  botão "Avaliar posto" por um aviso. Apagar a própria avaliação continua
+  permitido ao autor, e o admin continua podendo remover avaliação
+  denunciada.
+- **Puxar para atualizar em todos os módulos.** Já havia na home, favoritos,
+  histórico e detalhe. Acrescentado nas 4 abas do painel do posto, na lista
+  "Ver todas" das avaliações e no perfil do cliente; as 3 abas do admin já
+  nasceram com ele. Nas abas de **edição** do painel (Preços, Informações,
+  Horários) o gesto **não recarrega enquanto houver alteração não salva** —
+  avisa e devolve o controle, senão apagaria o que o dono digitou. Depois de
+  recarregar, cada aba re-semeia o estado local, senão o `_dirty` compararia
+  tela antiga com perfil novo. Lógica única em
+  `station_panel/presentation/widgets/panel_refresh.dart`. Telas de
+  formulário (cadastro, edição de perfil, editar exibição) não têm o gesto:
+  não há o que recarregar.
+- Motivo de denúncia é **lista fechada** em
+  `shared/models/report_reason.dart`, validada nas rules; o painel do posto
+  usa `ReportReasonPicker` (folha com opções) em vez de campo de texto. Os
+  valores vivem em dois lugares — enum e rule — e `test/admin_enums_test.dart`
+  falha se o enum mudar sem a rule.
+- **O admin passou a ler `gas_stations`** (`isOwner(uid) || isAdmin()`). Antes
+  nem admin lia, e havia teste garantindo isso; a garantia foi trocada **de
+  propósito** para a conferência de CNPJ. Admin não escreve nessa coleção, e
+  na aprovação só pode mudar `status`. Ver `ADMIN.md`, seção "Por que o admin
+  lê dado privado".
 - Dependências novas: `image` e `image_picker` (foto do posto) e
   `url_launcher` (rota externa do perfil público).
 
 ## Ainda não existe / próximos passos típicos
 
-- Admin ainda não lê `station_reports`/os `reports` de review denunciados
-  (painel de admin em si não existe) — a denúncia é gravada, mas não há
-  onde revisá-la no app ainda.
+- `station_reports` (denúncia do **posto** inteiro, não de avaliação) continua
+  sem código Dart que escreva nela: a coleção e as rules existem, nenhuma tela
+  cria esse tipo de denúncia. A regra de collection group já a alcança, e a
+  tela de admin a descarta por não casar o formato do caminho.
 - **Deploy de rules NÃO é automático** — não existe `.github/workflows/`.
   Depois de mergear mudança em `firestore.rules`, rodar
   `firebase deploy --only firestore:rules --project tcc-completai` na mão
   (o texto sobre GitHub Actions na seção "Fluxo de trabalho" está
   desatualizado — corrigir).
-- Painel de admin.
 
 ## Histórico de avaliações
 

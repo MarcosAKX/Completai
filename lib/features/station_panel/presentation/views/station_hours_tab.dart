@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../domain/models/opening_hours.dart';
 import '../providers/station_panel_providers.dart';
+import '../widgets/panel_refresh.dart';
 import '../widgets/station_hours_day_row.dart';
 import '../widgets/station_panel_section_header.dart';
 
@@ -23,6 +24,10 @@ class _StationHoursTabState extends ConsumerState<StationHoursTab> {
   @override
   void initState() {
     super.initState();
+    _seed();
+  }
+
+  void _seed() {
     _hours = ref.read(stationPanelViewModelProvider).requireValue.openingHours;
   }
 
@@ -60,7 +65,10 @@ class _StationHoursTabState extends ConsumerState<StationHoursTab> {
   @override
   Widget build(BuildContext context) {
     final anyOpen = Weekday.values.any(_hours.isOpen);
-    return ListView(
+    return PanelRefresh(
+      hasUnsavedChanges: () => _dirty,
+      onReloaded: () => setState(_seed),
+      child: ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
         StationPanelSectionHeader(
@@ -85,8 +93,9 @@ class _StationHoursTabState extends ConsumerState<StationHoursTab> {
           label: _dirty ? 'Salvar horários' : 'Nada para salvar',
           isLoading: _saving,
           onPressed: _dirty ? _save : null,
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }

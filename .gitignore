@@ -48,3 +48,6 @@ app.*.map.json
 
 # Rascunho local (scripts de auditoria, PDFs, prints) — nao versionar
 /tmp/
+
+# Chave de servico do Firebase Admin — NUNCA versionar
+serviceAccountKey.json

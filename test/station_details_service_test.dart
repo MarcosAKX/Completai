@@ -5,6 +5,7 @@ import 'package:completai/features/station_details/data/services/station_details
 import 'package:completai/features/station_details/domain/models/station_review_page.dart';
 import 'package:completai/shared/models/station_fuel.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:completai/shared/models/report_reason.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _stationUid = 'station-1';
@@ -189,6 +190,70 @@ void main() {
     expect(review['rating'], 5);
   });
 
+  test('avaliação é única: a segunda tentativa é recusada', () async {
+    final firestore = await _seeded();
+    final service = StationDetailsService(firestore);
+
+    await service.writeReview(
+      stationUid: _stationUid,
+      clientUid: _clientUid,
+      rating: 5,
+      comment: 'Muito bom.',
+    );
+
+    await expectLater(
+      service.writeReview(
+        stationUid: _stationUid,
+        clientUid: _clientUid,
+        rating: 1,
+        comment: 'Mudei de ideia.',
+      ),
+      throwsA(
+        isA<ValidationException>().having(
+          (e) => e.message,
+          'message',
+          contains('já avaliou'),
+        ),
+      ),
+    );
+
+    // A recusa não pode ter mexido em nada: nota, contagem e texto original
+    // continuam como estavam.
+    final station =
+        (await firestore.collection('public_stations').doc(_stationUid).get())
+            .data()!;
+    final review =
+        (await firestore
+                .collection('public_stations')
+                .doc(_stationUid)
+                .collection('reviews')
+                .doc(_clientUid)
+                .get())
+            .data()!;
+    expect(station['reviewCount'], 3);
+    expect(station['averageRating'], closeTo(14 / 3, 0.001));
+    expect(review['rating'], 5);
+    expect(review['comment'], 'Muito bom.');
+  });
+
+  test('hasReviewed responde antes e depois de avaliar', () async {
+    final firestore = await _seeded();
+    final service = StationDetailsService(firestore);
+
+    expect(await service.hasReviewed(_stationUid, _clientUid), isFalse);
+
+    await service.writeReview(
+      stationUid: _stationUid,
+      clientUid: _clientUid,
+      rating: 4,
+      comment: '',
+    );
+
+    expect(await service.hasReviewed(_stationUid, _clientUid), isTrue);
+    // Outro cliente ainda pode avaliar.
+    expect(await service.hasReviewed(_stationUid, 'outro-cliente'), isFalse);
+  });
+
   test('reportReview grava a denúncia sob a review denunciada', () async {
     final firestore = await _seeded();
     final service = StationDetailsService(firestore);
@@ -197,7 +262,7 @@ void main() {
       stationUid: _stationUid,
       clientUid: 'client-2',
       reporterUid: _stationUid,
-      reason: 'Comentário ofensivo.',
+      reason: ReportReason.offensive.wireValue,
     );
 
     final report = await firestore
@@ -210,20 +275,38 @@ void main() {
         .get();
     expect(report.exists, isTrue);
     expect(report.data()!['reporterUid'], _stationUid);
-    expect(report.data()!['reason'], 'Comentário ofensivo.');
+    // Grava o wireValue do enum, que é o que as rules aceitam.
+    expect(report.data()!['reason'], 'offensive');
   });
 
-  test('reportReview rejeita motivo vazio', () async {
+  test('reportReview rejeita motivo fora da lista fechada', () async {
     final service = StationDetailsService(await _seeded());
 
-    await expectLater(
-      service.reportReview(
+    // Motivo livre não existe mais: a UI oferece opções e as rules só aceitam
+    // os wireValue do enum. Checar aqui evita um permission-denied ilegível.
+    for (final reason in ['   ', 'Comentário ofensivo.', 'OFFENSIVE', '']) {
+      await expectLater(
+        service.reportReview(
+          stationUid: _stationUid,
+          clientUid: 'client-2',
+          reporterUid: _stationUid,
+          reason: reason,
+        ),
+        throwsA(isA<ValidationException>()),
+      );
+    }
+  });
+
+  test('reportReview aceita todos os motivos do enum', () async {
+    final service = StationDetailsService(await _seeded());
+
+    for (final reason in ReportReason.values) {
+      await service.reportReview(
         stationUid: _stationUid,
         clientUid: 'client-2',
         reporterUid: _stationUid,
-        reason: '   ',
-      ),
-      throwsA(isA<ValidationException>()),
-    );
+        reason: reason.wireValue,
+      );
+    }
   });
 }

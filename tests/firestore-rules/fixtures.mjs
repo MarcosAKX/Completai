@@ -11,7 +11,10 @@ export const publicStation = (uid) => ({
   pricesUpdatedAt: createdAt,
   openingHours: { monday: null, tuesday: null, wednesday: null, thursday: null, friday: null, saturday: null, sunday: null },
   averageRating: 0, reviewCount: 0, services: [], tags: [],
+  status: 'pending',
 });
 export const stationCover = (uid, size = 1000) => ({ uid, image: 'a'.repeat(size), updatedAt: createdAt });
 export const review = (uid, rating = 5) => ({ clientUid: uid, clientName: 'Cliente teste', rating, comment: 'Atendimento bom', createdAt });
-export const report = (uid) => ({ reporterUid: uid, reason: 'Dados incorretos', createdAt });
+// `reason` agora vem de lista fechada (enum ReportReason). Denuncia de
+// posto nao valida o motivo; de avaliacao, valida.
+export const report = (uid) => ({ reporterUid: uid, reason: 'offensive', status: 'pending', createdAt });

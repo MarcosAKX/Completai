@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/opening_hours.dart';
+import 'time_dropdown_dialog.dart';
 
 class StationHoursDayRow extends StatelessWidget {
   const StationHoursDayRow({
@@ -25,13 +26,10 @@ class StationHoursDayRow extends StatelessWidget {
 
   Future<void> _pick(BuildContext context, {required bool isOpen}) async {
     final current = _parse(isOpen ? hours!.open : hours!.close);
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: current,
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-        child: child!,
-      ),
+    final picked = await TimeDropdownDialog.show(
+      context,
+      title: isOpen ? 'Abre às — ${day.label}' : 'Fecha às — ${day.label}',
+      initial: current,
     );
     if (picked == null) return;
     final value = _format(picked);
