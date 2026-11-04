@@ -195,9 +195,46 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Linguagem ofensiva'), findsOneWidget);
-    expect(find.text('Denunciado por Posto Um'), findsOneWidget);
+    // reporterUid == stationUid: quem denunciou foi o dono do posto.
+    expect(find.text('Denunciado pelo posto · Posto Um'), findsOneWidget);
     // O admin decide lendo o conteúdo, não só o motivo.
     expect(find.text('Texto que o posto denunciou'), findsOneWidget);
+    expect(find.text('Manter'), findsOneWidget);
+    expect(find.text('Remover'), findsOneWidget);
+  });
+
+  testWidgets('denúncia de cliente aparece identificada como tal', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      reports: [
+        ReviewReport(
+          stationUid: 'p1',
+          clientUid: 'bob',
+          // Diferente do posto: foi outro cliente que denunciou.
+          reporterUid: 'alice',
+          reason: ReportReason.offensive,
+          status: ReportStatus.pending,
+          createdAt: DateTime(2026, 9, 1),
+          stationName: 'Posto Um',
+          review: const StationReview(
+            clientUid: 'bob',
+            clientName: 'Bob',
+            rating: 1,
+            comment: 'Texto denunciado por outro cliente',
+            createdAt: null,
+          ),
+        ),
+      ],
+    );
+
+    await tester.tap(find.text('Denúncias'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Denunciado por um cliente · Posto Um'), findsOneWidget);
+    // O cliente não é identificado pelo nome: o admin não lê `users/`.
+    expect(find.textContaining('alice'), findsNothing);
     expect(find.text('Manter'), findsOneWidget);
     expect(find.text('Remover'), findsOneWidget);
   });

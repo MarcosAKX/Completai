@@ -68,13 +68,27 @@ class AdminReportCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            report.stationName.isEmpty
-                ? 'Posto não identificado'
-                : 'Denunciado por ${report.stationName}',
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.textSecondary,
-            ),
+          Row(
+            children: [
+              Icon(
+                report.reportedByStation
+                    ? Icons.local_gas_station_outlined
+                    : Icons.person_outline,
+                size: 14,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  report.stationName.isEmpty
+                      ? report.reporterLabel
+                      : '${report.reporterLabel} · ${report.stationName}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.md),
 

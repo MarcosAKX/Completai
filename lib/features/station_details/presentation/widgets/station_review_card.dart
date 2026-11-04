@@ -10,11 +10,16 @@ class StationReviewCard extends StatelessWidget {
   const StationReviewCard({
     required this.review,
     this.preview = false,
+    this.onReport,
     super.key,
   });
 
   final StationReview review;
   final bool preview;
+
+  /// Denunciar esta avaliação. `null` esconde o botão — é o caso da própria
+  /// avaliação do usuário e o de quem não está logado.
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -81,6 +86,20 @@ class StationReviewCard extends StatelessWidget {
           overflow: preview ? TextOverflow.ellipsis : TextOverflow.visible,
           style: const TextStyle(color: AppColors.textSecondary),
         ),
+        if (onReport != null)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: onReport,
+              icon: const Icon(Icons.flag_outlined, size: 16),
+              label: const Text('Denunciar'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+                visualDensity: VisualDensity.compact,
+                textStyle: AppTextStyles.caption,
+              ),
+            ),
+          ),
       ],
     ),
   );

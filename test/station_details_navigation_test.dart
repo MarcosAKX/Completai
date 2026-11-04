@@ -17,6 +17,7 @@ import 'package:completai/features/station_discovery/presentation/views/station_
 import 'package:completai/shared/models/station_brand.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:completai/shared/models/report_reason.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _summary = StationSummary(
@@ -53,6 +54,8 @@ class _DiscoveryRepository implements StationDiscoveryRepository {
 }
 
 class _DetailsRepository implements StationDetailsRepository {
+  ReportReason? reportedReason;
+  String? reportedClientUid;
   @override
   Future<StationReviewPage> loadReviewPage(
     String stationUid, {
@@ -87,6 +90,16 @@ class _DetailsRepository implements StationDetailsRepository {
     isFavorite: false,
   );
 
+
+  @override
+  Future<void> reportReview({
+    required String stationUid,
+    required String clientUid,
+    required ReportReason reason,
+  }) async {
+    reportedReason = reason;
+    reportedClientUid = clientUid;
+  }
   @override
   Future<void> openDirections(StationDetails details) async {}
   @override

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/report_reason_picker.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../domain/models/station_review.dart';
 import '../../../../shared/models/station_hours_status.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../station_cover/presentation/providers/station_cover_providers.dart';
@@ -122,6 +125,12 @@ class StationDetailsPage extends ConsumerWidget {
                                 ),
                               ),
                         hasReviewed: content.hasReviewed,
+                        currentClientUid: ref
+                            .watch(sessionViewModelProvider)
+                            .valueOrNull
+                            ?.uid,
+                        onReportReview: (review) =>
+                            _report(context, viewModel, review),
                         onReview: () => _review(context, viewModel),
                       ),
                     ],
@@ -151,6 +160,28 @@ class StationDetailsPage extends ConsumerWidget {
     final ok = await viewModel.openDirections();
     if (!context.mounted || ok) return;
     _showError(context);
+  }
+
+  /// Abre a lista de motivos e envia a denúncia. A avaliação continua na
+  /// tela: ela só some se o admin aprovar, e esconder na hora daria a
+  /// impressão errada de que a denúncia já valeu.
+  Future<void> _report(
+    BuildContext context,
+    StationDetailsViewModel viewModel,
+    StationReview review,
+  ) async {
+    final reason = await ReportReasonPicker.show(
+      context,
+      clientName: review.clientName,
+    );
+    if (reason == null || !context.mounted) return;
+    final error = await viewModel.reportReview(review, reason);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? 'Denúncia enviada para análise.'),
+      ),
+    );
   }
 
   Future<void> _review(
