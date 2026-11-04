@@ -9,7 +9,7 @@ import '../../../station_details/presentation/widgets/station_details_error.dart
 import '../../../station_details/presentation/widgets/station_review_card.dart';
 import '../providers/station_panel_providers.dart';
 import '../providers/station_panel_reviews_providers.dart';
-import '../widgets/report_reason_picker.dart';
+import '../../../../core/widgets/report_reason_picker.dart';
 import '../widgets/station_panel_placeholder_tab.dart';
 import '../widgets/station_panel_section_header.dart';
 

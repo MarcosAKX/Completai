@@ -149,6 +149,10 @@ Service de cadastro deve validar isso também no client antes de escrever
 - A segurança real está nas `firestore.rules`; a checagem de claim no client é
   só para não mostrar erro de permissão feio.
 
+`ReportReasonPicker` vive em `core/widgets/`: a folha de motivos de denúncia
+é usada pelo painel do posto e pelo perfil público, com a mesma lista
+fechada validada nas rules.
+
 ### Constantes que saíram de `admin/` para `shared/`
 
 `StationApprovalStatus` e `ReportReason` nasceram em `admin/domain/models/`

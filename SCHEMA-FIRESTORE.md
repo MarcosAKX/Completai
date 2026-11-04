@@ -183,6 +183,13 @@ separadas de exclusividade de papel e integridade dos agregados de reviews.
 }
 ```
 
+> **Quem denuncia**: o dono do posto (pelo painel) ou **outro cliente**
+> (pelo perfil público). O id do documento é o uid de quem denuncia, então
+> cada um tem o seu e ninguém sobrescreve a denúncia do outro.
+> `reporterUid != clientUid` nas rules impede denunciar a própria avaliação —
+> quem não quer mais a dela apaga. O admin distingue a origem pelo caminho
+> (`reporterUid == stationUid` = posto), sem campo novo e sem ler `users/`.
+
 > **Avaliação é única**: `allow update: if false` na review. O id do
 > documento é o uid do cliente, então nunca houve duplicata — o que mudou é
 > que a primeira escrita passou a ser a final. O autor ainda pode apagar a

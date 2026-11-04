@@ -16,6 +16,8 @@ class StationReviewsPreview extends StatelessWidget {
     required this.onReview,
     required this.onSeeAll,
     this.hasReviewed = false,
+    this.currentClientUid,
+    this.onReportReview,
     super.key,
   });
 
@@ -27,6 +29,13 @@ class StationReviewsPreview extends StatelessWidget {
 
   /// Já avaliou: o botão vira aviso. Avaliação é única e não se edita.
   final bool hasReviewed;
+
+  /// Quem está vendo. Usado só para esconder "Denunciar" na própria
+  /// avaliação; `null` quando não há sessão.
+  final String? currentClientUid;
+
+  /// Abre a denúncia da avaliação escolhida.
+  final void Function(StationReview review)? onReportReview;
 
   @override
   Widget build(BuildContext context) => StationDetailsSection(
@@ -62,7 +71,18 @@ class StationReviewsPreview extends StatelessWidget {
           const Text('Este posto ainda não recebeu avaliações.')
         else
           for (final review in reviews.take(3))
-            StationReviewCard(review: review, preview: true),
+            StationReviewCard(
+              review: review,
+              preview: true,
+              // Ninguém denuncia a própria avaliação: quem não quer mais a
+              // dela apaga. As rules também recusam.
+              onReport:
+                  onReportReview == null ||
+                      currentClientUid == null ||
+                      currentClientUid == review.clientUid
+                  ? null
+                  : () => onReportReview!(review),
+            ),
         const SizedBox(height: AppSpacing.md),
         SizedBox(
           width: double.infinity,

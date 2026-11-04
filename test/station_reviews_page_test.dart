@@ -9,9 +9,12 @@ import 'package:completai/features/station_details/presentation/providers/statio
 import 'package:completai/features/station_details/presentation/views/station_reviews_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:completai/shared/models/report_reason.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _Repository implements StationDetailsRepository {
+  ReportReason? reportedReason;
+  String? reportedClientUid;
   var page = 0;
 
   @override
@@ -49,6 +52,16 @@ class _Repository implements StationDetailsRepository {
     String stationUid, {
     bool forceRefresh = false,
   }) => throw UnimplementedError();
+
+  @override
+  Future<void> reportReview({
+    required String stationUid,
+    required String clientUid,
+    required ReportReason reason,
+  }) async {
+    reportedReason = reason;
+    reportedClientUid = clientUid;
+  }
   @override
   Future<void> openDirections(StationDetails details) async {}
   @override

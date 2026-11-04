@@ -1,14 +1,18 @@
 // Escolha do motivo da denúncia: lista fechada, sem campo de texto.
 //
+// Usado pelo painel do posto e pelo perfil público — o dono denuncia a
+// avaliação de um cliente, e um cliente denuncia a de outro. Mesma folha,
+// mesma lista de motivos, mesma validação nas rules.
+//
 // Os valores enviados são os `wireValue` de `ReportReason`, e as
 // `firestore.rules` recusam qualquer outro — digitar motivo livre deixaria
 // a denúncia ilegível para o admin e abriria espaço para abuso no campo.
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../shared/models/report_reason.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
+import '../../shared/models/report_reason.dart';
 
 class ReportReasonPicker extends StatelessWidget {
   const ReportReasonPicker({super.key, required this.clientName});

@@ -165,6 +165,13 @@ apenas `list`, e apenas a admin. Exige o índice de collection group em
 A mesma regra alcança `station_reports/.../reports`; a tela descarta o que não
 casa o formato do caminho de denúncia de avaliação.
 
+**A denúncia pode vir de dois lados**: do dono do posto (aba Avaliações do
+painel) ou de outro cliente (perfil público do posto). A tela mostra qual,
+derivando do caminho — `reporterUid == stationUid` só acontece para o dono.
+Não há campo dizendo isso, porque campo o denunciante poderia forjar; e o
+cliente não é identificado pelo nome, porque o admin não lê `users/`. Para
+moderar, o que importa é saber se a denúncia partiu do posto interessado.
+
 **Remover a avaliação apaga também as denúncias penduradas nela.** O
 Firestore não apaga subcoleção junto com o documento pai, e o id do documento
 de review é o uid do cliente — então o caminho se repete quando a mesma

@@ -249,7 +249,16 @@ service cloud.firestore {
           // livre). Antes `create` nao validava nada: qualquer string
           // passava. Mantem os valores em sincronia com o enum
           // `ReportReason` de shared/models/report_reason.dart.
+          // Qualquer usuario autenticado denuncia: o dono do posto (pelo
+          // painel) e tambem outro cliente (pelo perfil publico). O id do
+          // documento e o uid de quem denuncia, entao cada um tem o seu e
+          // ninguem sobrescreve a denuncia do outro.
+          //
+          // `reporterUid != clientUid` impede denunciar a PROPRIA avaliacao:
+          // quem nao quer mais a dela apaga, nao denuncia. Sem isso daria
+          // para entupir a fila do admin com autodenuncia.
           allow create: if isOwner(reporterUid)
+                        && reporterUid != clientUid
                         && validReport(request.resource.data, reporterUid)
                         && request.resource.data.status == 'pending';
 
@@ -264,6 +273,7 @@ service cloud.firestore {
           // resolvida esconderia ela do admin.
           allow update: if isAdmin()
                         || (isOwner(reporterUid)
+                            && reporterUid != clientUid
                             && validReport(request.resource.data, reporterUid)
                             && request.resource.data.status == 'pending');
 

@@ -1,5 +1,6 @@
 // Coordena detalhe, reviews, favorito, rota e cacheia o resultado por posto.
 import '../../../../core/errors/exceptions.dart';
+import '../../../../shared/models/report_reason.dart';
 import '../../../../core/errors/failure_mapper.dart';
 import '../../domain/models/station_details.dart';
 import '../../domain/models/station_details_state.dart';
@@ -102,6 +103,31 @@ class StationDetailsRepositoryImpl implements StationDetailsRepository {
   }) => guardInfra(
     () => _service.readReviewPage(stationUid, after: after, limit: limit),
   );
+
+  @override
+  Future<void> reportReview({
+    required String stationUid,
+    required String clientUid,
+    required ReportReason reason,
+  }) {
+    final reporterUid = uidProvider();
+    if (reporterUid == null) throw const UnauthenticatedException();
+    if (reporterUid == clientUid) {
+      // As rules tambem recusam; checar aqui troca um permission-denied
+      // ilegivel por uma mensagem que o cliente entende.
+      throw const ValidationException(
+        'Você não pode denunciar a própria avaliação.',
+      );
+    }
+    return guardInfra(
+      () => _service.reportReview(
+        stationUid: stationUid,
+        clientUid: clientUid,
+        reporterUid: reporterUid,
+        reason: reason.wireValue,
+      ),
+    );
+  }
 
   @override
   Future<void> openDirections(StationDetails details) => guardInfra(

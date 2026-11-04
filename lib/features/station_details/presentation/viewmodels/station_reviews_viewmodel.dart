@@ -1,6 +1,10 @@
 // Paginação das avaliações públicas sem dependência de widgets ou Firebase.
 import 'package:riverpod/riverpod.dart';
 
+import '../../../../core/errors/exceptions.dart';
+import '../../../../core/errors/failures.dart';
+import '../../../../shared/models/report_reason.dart';
+import '../../domain/models/station_review.dart';
 import '../../domain/models/station_reviews_state.dart';
 import '../../domain/repositories/station_details_repository.dart';
 
@@ -21,6 +25,27 @@ class StationReviewsViewModel
       nextCursor: page.nextCursor,
       hasMore: page.hasMore,
     );
+  }
+
+  /// Mesma denúncia da prévia, para a lista completa. Devolve `null` no
+  /// sucesso ou a mensagem de erro; a lista não muda, porque a avaliação
+  /// continua no ar até o admin decidir.
+  Future<String?> reportReview(
+    StationReview review,
+    ReportReason reason,
+  ) async {
+    try {
+      await _repository.reportReview(
+        stationUid: _stationUid,
+        clientUid: review.clientUid,
+        reason: reason,
+      );
+      return null;
+    } on Failure catch (error) {
+      return error.message;
+    } on AppException catch (error) {
+      return error.message;
+    }
   }
 
   Future<bool> loadMore() async {

@@ -8,6 +8,7 @@ import 'package:completai/features/station_details/presentation/providers/statio
 import 'package:completai/shared/models/station_brand.dart';
 import 'package:completai/shared/models/station_fuel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:completai/shared/models/report_reason.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _details = StationDetails(
@@ -35,6 +36,8 @@ const _details = StationDetails(
 );
 
 class _FakeRepository implements StationDetailsRepository {
+  ReportReason? reportedReason;
+  String? reportedClientUid;
   bool favorite = false;
   int loads = 0;
   int reviewsWritten = 0;
@@ -75,6 +78,16 @@ class _FakeRepository implements StationDetailsRepository {
     reviewsWritten++;
   }
 
+
+  @override
+  Future<void> reportReview({
+    required String stationUid,
+    required String clientUid,
+    required ReportReason reason,
+  }) async {
+    reportedReason = reason;
+    reportedClientUid = clientUid;
+  }
   @override
   Future<void> openDirections(StationDetails details) async {
     directionsOpened = true;
