@@ -525,3 +525,49 @@ test('posto com CEP mascarado no banco não consegue salvar nada', async () => {
   await seed(['gas_stations/station', station('station')], ['public_stations/station', comMascara]);
   await assertFails(updateDoc(doc(database('station'), 'public_stations/station'), { brandName: 'Outro' }));
 });
+
+// ---------- Cliente denuncia avaliacao de outro cliente ----------
+
+test('cliente denuncia a avaliação de outro cliente', async () => {
+  // Mesmo caminho que o posto usa; o id do documento e o uid de quem
+  // denuncia, entao cliente e posto podem denunciar a MESMA avaliacao sem
+  // sobrescrever um ao outro.
+  const path = 'public_stations/station/reviews/bob/reports/alice';
+  await assertSucceeds(setDoc(doc(database('alice'), path), report('alice')));
+});
+
+test('cliente e posto denunciam a mesma avaliação, cada um no seu documento', async () => {
+  await assertSucceeds(setDoc(doc(database('alice'), 'public_stations/station/reviews/bob/reports/alice'), report('alice')));
+  await assertSucceeds(setDoc(doc(database('station'), 'public_stations/station/reviews/bob/reports/station'), report('station')));
+  const snapshot = await assertSucceeds(getDocs(collection(database('admin', { admin: true }), 'public_stations/station/reviews/bob/reports')));
+  assert.equal(snapshot.size, 2);
+});
+
+test('ninguém denuncia a própria avaliação', async () => {
+  // Quem nao quer mais a propria avaliacao apaga; denunciar a si mesmo so
+  // entupiria a fila do admin.
+  await assertFails(setDoc(doc(database('alice'), 'public_stations/station/reviews/alice/reports/alice'), report('alice')));
+  await assertFails(setDoc(doc(database('station'), 'public_stations/station/reviews/station/reports/station'), report('station')));
+});
+
+test('cliente não denuncia em nome de outro', async () => {
+  await assertFails(setDoc(doc(database('alice'), 'public_stations/station/reviews/bob/reports/carol'), report('carol')));
+  await assertFails(setDoc(doc(database('alice'), 'public_stations/station/reviews/bob/reports/alice'), report('carol')));
+});
+
+test('cliente não lê as denúncias, nem as próprias', async () => {
+  const path = 'public_stations/station/reviews/bob/reports/alice';
+  await seed([path, report('alice')]);
+  // Denuncia e material de moderacao: so admin le.
+  await assertFails(getDoc(doc(database('alice'), path)));
+  await assertFails(getDocs(collection(database('alice'), 'public_stations/station/reviews/bob/reports')));
+});
+
+test('cliente não decide o veredito da própria denúncia', async () => {
+  const path = 'public_stations/station/reviews/bob/reports/alice';
+  await seed([path, report('alice')]);
+  for (const status of ['resolved', 'dismissed']) {
+    await assertFails(updateDoc(doc(database('alice'), path), { status }));
+  }
+  await assertFails(deleteDoc(doc(database('alice'), path)));
+});

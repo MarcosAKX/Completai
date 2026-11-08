@@ -38,6 +38,19 @@ class ReviewReport {
   /// A avaliação não existe mais (removida por aqui ou pelo próprio autor).
   final bool reviewMissing;
 
+  /// Quem denunciou: o dono do posto ou outro cliente.
+  ///
+  /// Derivado do CAMINHO — `reporterUid == stationUid` só acontece para o
+  /// dono. Não vem de campo do documento, que o denunciante poderia forjar,
+  /// e não exige ler `users/`, que o admin não pode ler.
+  bool get reportedByStation => reporterUid == stationUid;
+
+  /// Rótulo pronto para a tela do admin. Cliente não é identificado pelo
+  /// nome: o admin não tem leitura em `users/`, e para moderar basta saber
+  /// que a denúncia não partiu do posto interessado.
+  String get reporterLabel =>
+      reportedByStation ? 'Denunciado pelo posto' : 'Denunciado por um cliente';
+
   /// Identidade estável do documento, para `key` de lista e comparação.
   String get id => '$stationUid/$clientUid/$reporterUid';
 

@@ -294,6 +294,22 @@ documentação.
   `station_panel/presentation/widgets/panel_refresh.dart`. Telas de
   formulário (cadastro, edição de perfil, editar exibição) não têm o gesto:
   não há o que recarregar.
+- **Cliente denuncia a avaliação de outro cliente**, pelo perfil público —
+  mesmo caminho e mesma folha de motivos que o painel do posto usa. O id do
+  documento é o uid de quem denuncia, então posto e cliente podem denunciar a
+  **mesma** avaliação sem sobrescrever um ao outro. Botão "Denunciar" nos
+  cards da prévia e do "Ver todas"; **some na própria avaliação** (quem não
+  quer mais a dela apaga) e para quem não está logado. Denunciar **não altera
+  a lista**: a avaliação só sai se o admin aprovar — esconder na hora daria a
+  impressão errada de que a denúncia já valeu.
+- No painel do admin, quem denunciou é derivado do **caminho**
+  (`reporterUid == stationUid` = dono do posto), não de campo do documento —
+  campo o denunciante poderia forjar. O cliente **não é identificado pelo
+  nome**: o admin não tem leitura em `users/`, e para moderar basta saber que
+  a denúncia não partiu do posto interessado. "Manter" descarta e "Remover"
+  apaga a avaliação, como já era.
+- `ReportReasonPicker` saiu de `station_panel/` para `core/widgets/` ao
+  passar a ser usado por duas features.
 - Motivo de denúncia é **lista fechada** em
   `shared/models/report_reason.dart`, validada nas rules; o painel do posto
   usa `ReportReasonPicker` (folha com opções) em vez de campo de texto. Os
